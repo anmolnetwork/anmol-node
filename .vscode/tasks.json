@@ -1,37 +1,64 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
-    "version": "2.0.0",
-    "tasks": [
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "substrate: Run Release Node",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "run",
+        "--release",
+        "--",
+        "--dev"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": [
         {
-            "label": "Run ",
-            "type": "shell",
-            "command": "cargo",
-            "args": ["run", "--release", "--", "--dev"],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": [
-            {
-                "owner": "rust",
-                "fileLocation": ["relative", "${workspaceRoot}"],
-                "pattern": {
-                "regexp": "^(.*):(\\d+):(\\d+):\\s+(\\d+):(\\d+)\\s+(warning|error):\\s+(.*)$",
-                "file": 1,
-                "line": 2,
-                "column": 3,
-                "endLine": 4,
-                "endColumn": 5,
-                "severity": 6,
-                "message": 7
-                }
-            }
-            ]
+          "owner": "rust",
+          "fileLocation": [
+            "relative",
+            "${workspaceRoot}"
+          ],
+          "pattern": {
+            "regexp": "^(.*):(\\d+):(\\d+):\\s+(\\d+):(\\d+)\\s+(warning|error):\\s+(.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "endLine": 4,
+            "endColumn": 5,
+            "severity": 6,
+            "message": 7
+          }
         }
-    ]
+      ]
+    },
+    {
+      "label": "substrate: Open PolkadotJS Apps",
+      "type": "process",
+      "command": "xdg-open",
+      "osx": {
+        "command": "open"
+      },
+      "args": [
+        "https://polkadot.js.org/apps/?rpc=wss://127.0.0.1:9944/wss"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    }
+  ]
 }

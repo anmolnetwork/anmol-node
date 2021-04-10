@@ -1,0 +1,18 @@
+{
+  "cSpell.words": [
+    "ipfs",
+    "anmol",
+    "offchain",
+    "parachain"
+  ],
+
+  "editor.renderWhitespace": "all",
+
+  "rust-analyzer.debug.openDebugPane": true,
+  "rust-analyzer.debug.engine": "vadimcn.vscode-lldb",
+
+  // VS Code don't watch files under ./target
+  "files.watcherExclude": {
+    "**/target/**": true
+  }
+}
