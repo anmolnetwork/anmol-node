@@ -23,7 +23,7 @@ use anmol_runtime::Block;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Anmol".into()
+		"Anmol Network".into()
 	}
 
 	fn impl_version() -> String {
