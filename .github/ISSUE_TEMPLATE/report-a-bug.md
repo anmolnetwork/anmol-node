@@ -1,6 +1,6 @@
 ---
 name: Report a Bug
-about: Report a problem with this template.
+about: Report a problem with this project.
 title: ""
 labels: bug
 assignees: ""
@@ -33,7 +33,7 @@ _Describe the environment in which you encountered this bug. Use the list below 
 and add additional information if you think it's relevant._
 
 - Operating system:
-- Template version/tag:
+- Anmol Parachain version/tag:
 - Rust version (run `rustup show`):
 
 **Logs, Errors or Screenshots**
