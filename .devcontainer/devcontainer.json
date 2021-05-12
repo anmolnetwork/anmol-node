@@ -1,25 +1,36 @@
 {
-  "name": "Substrate Node template",
-  "context": "..",
-  "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash",
-    "lldb.executable": "/usr/bin/lldb"
-  },
-  "extensions": [
-    "rust-lang.rust",
-    "bungcip.better-toml",
-    "vadimcn.vscode-lldb"
+  "name": "Anmol Development Environment",
+
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "docker-compose.yml"
   ],
+  "service": "dev",
   "forwardPorts": [
     3000,
     9944
   ],
-  "preCreateCommand": ["cargo build", "cargo check"],
-  "postStartCommand": "./target/debug/node-template --dev --ws-external",
-  "menuActions": [
-    {"id": "polkadotjs",
-     "label": "Open PolkadotJS Apps",
-     "type": "external-preview",
-     "args": ["https://polkadot.js.org/apps/?rpc=wss%3A%2F%2F/$HOST/wss"]}
-  ]
+  "workspaceFolder": "/builds",
+
+  "extensions": [
+    "matklad.rust-analyzer",
+    "bungcip.better-toml",
+    "vadimcn.vscode-lldb",
+    "paritytech.vscode-substrate",
+    "editorconfig.editorconfig",
+    "mutantdino.resourcemonitor",
+    "cschleiden.vscode-github-actions",
+    "github.codespaces"
+  ],
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash",
+    "lldb.executable": "/usr/bin/lldb"
+  },
+
+  "postCreateCommand": "cargo check && cargo build",
+
+  // See https://aka.ms/vscode-remote/containers/non-root for details.
+  "remoteUser": "anmol",
+
+  "shutdownAction": "stopCompose"
 }
