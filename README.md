@@ -1,13 +1,26 @@
-# Anmol Substrate Node
+# [Anmol](https://anmol.network/) Substrate Node 🖼🛠️👷
 
-[![Try on playground](https://img.shields.io/badge/Playground-Node_Template-brightgreen?logo=Parity%20Substrate)](https://playground.substrate.dev/?deploy=node-template)
+Anmol is the First Cross-Chain NFT Toolkit, on Polkadot. Introducing:
 
-A fresh FRAME-based [Substrate](https://www.substrate.io/) node, ready for hacking :rocket:
+- Moulds
+- NFT Breeding
+- Multi-Chain NFT Migration
+- ink! for Moulds
+- DAO-based Communities
+- Fractional NFT ownership
+- Marketplace.
+
+## Engage with Anmol
+
+<a href="https://t.me/anmolnetwork" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/1024px-Telegram_logo.svg.png" height="42" width="42" /></a>
+<a href="https://twitter.com/AnmolNetwork" target="_blank"><img src="https://www.lter-europe.net/document-archive/image-gallery/albums/logos/TwitterLogo_55acee.png/image" height="42" width="42"/></a>
+<a href="https://discord.gg/zZHqMwq23X" target="_blank"><img src="https://cdn.icon-icons.com/icons2/2108/PNG/512/discord_icon_130958.png" height="42" width="42"/></a>
+<a href="https://medium.com/anmolnetwork" target="_blank"><img src="https://cdn4.iconfinder.com/data/icons/social-media-2210/24/Medium-512.png" height="42" width="42"/></a>
+<a href="https://www.linkedin.com/company/anmolnetwork/" target="_blank"><img src="https://image.flaticon.com/icons/png/512/174/174857.png" height="42" width="42"/></a>
 
 ## Getting Started
 
-Follow the steps below to get started with the Anmol Node, or get it up and running right from your browser
-in just a few clicks using [Playground](https://playground.substrate.dev/) :hammer_and_wrench:
+Follow the steps below to get started with the Anmol Node. :hammer_and_wrench:
 
 ### Rust Setup
 
