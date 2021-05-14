@@ -1,13 +1,12 @@
 [package]
-authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
+authors = ['Anmol']
 description = 'FRAME pallet template for defining custom runtime logic.'
 edition = '2018'
-homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'pallet-template'
+name = 'pallet-nft'
 readme = 'README.md'
 repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
-version = '3.0.0'
+version = '0.1.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']

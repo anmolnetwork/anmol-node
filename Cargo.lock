@@ -148,6 +148,7 @@ dependencies = [
  "pallet-balances",
  "pallet-grandpa",
  "pallet-kitties",
+ "pallet-nft",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
@@ -3800,6 +3801,21 @@ dependencies = [
 
 [[package]]
 name = "pallet-kitties"
+version = "0.1.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-nft"
 version = "0.1.0"
 dependencies = [
  "frame-benchmarking",

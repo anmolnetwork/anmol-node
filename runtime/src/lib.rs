@@ -42,6 +42,8 @@ use pallet_transaction_payment::CurrencyAdapter;
 /// Import the kitties pallet.
 pub use pallet_kitties;
 
+pub use pallet_nft;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -269,6 +271,10 @@ impl pallet_kitties::Config for Runtime {
 	type Event = Event;
 }
 
+impl pallet_nft::Config for Runtime {
+	type Event = Event;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -285,6 +291,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 		KittiesModule: pallet_kitties::{Module, Call, Storage, Event<T>},
+		NftModule: pallet_nft::{Module, Call, Storage, Event<T>},
 	}
 );
 
@@ -481,6 +488,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_kitties, KittiesModule);
+			add_benchmark!(params, batches, pallet_nft, NftModule);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
