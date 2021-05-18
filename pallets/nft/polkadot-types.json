@@ -1,0 +1,23 @@
+{
+    "ClassInfo": {
+        "metadata": "Vec<u8>",
+        "total_issuance": "TokenId",
+        "owner": "AccountId",
+        "data": "ClassData"
+    },
+    "ClassInfoOf": "ClassInfo",
+    "TokenInfo": {
+        "metadata": "Vec<u8>",
+        "owner": "AccountId",
+        "data": "TokenData"
+    },
+    "TokenInfoOf": "TokenInfo",
+
+    "Cid": "Vec<u8>",
+    "ClassId": "u32",
+    "TokenId": "u32",
+    "ClassData": {},
+    "TokenData": {
+        "dna": "Vec<u8>"
+    }
+}

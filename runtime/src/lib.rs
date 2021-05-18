@@ -44,6 +44,8 @@ pub use pallet_kitties;
 
 pub use pallet_nft;
 
+pub use orml_nft;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -275,6 +277,13 @@ impl pallet_nft::Config for Runtime {
 	type Event = Event;
 }
 
+impl orml_nft::Config for Runtime {
+	type ClassId = u32;
+	type TokenId = u32;
+	type ClassData = pallet_nft::ClassData;
+	type TokenData = pallet_nft::TokenData;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -292,6 +301,7 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 		KittiesModule: pallet_kitties::{Module, Call, Storage, Event<T>},
 		NftModule: pallet_nft::{Module, Call, Storage, Event<T>},
+		OrmlNft: orml_nft::{Module, Storage},
 	}
 );
 
