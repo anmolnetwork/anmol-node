@@ -1,11 +1,12 @@
 [package]
-authors = ['Anmol']
-description = 'FRAME pallet template for defining custom runtime logic.'
+authors = ['DotMatrix <hello@dotmatrix.im>']
+description = 'Nft pallet'
 edition = '2018'
+homepage = 'https://anmol.network/'
 license = 'Unlicense'
 name = 'pallet-nft'
 readme = 'README.md'
-repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
+repository = 'https://github.com/anmolnetwork/anmol-node/'
 version = '0.1.0'
 
 [package.metadata.docs.rs]
