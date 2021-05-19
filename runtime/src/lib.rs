@@ -41,9 +41,7 @@ use pallet_transaction_payment::CurrencyAdapter;
 
 /// Import the kitties pallet.
 pub use pallet_kitties;
-
 pub use pallet_nft;
-
 pub use orml_nft;
 
 /// An index to a block.
