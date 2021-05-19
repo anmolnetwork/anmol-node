@@ -15,8 +15,11 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+pub type Dna = Vec<u8>;
+pub type Cid = Vec<u8>;
+
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
 pub struct ClassData {
 	// To be expanded
 }
@@ -24,11 +27,17 @@ pub struct ClassData {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct TokenData {
-	dna: Vec<u8>,
+	dna: Dna,
 	// To be expanded
 }
 
-pub type Cid = Vec<u8>;
+impl TokenData {
+	fn new(dna: Dna) -> Self {
+		TokenData {
+			dna,
+		}
+	}
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -72,9 +81,7 @@ pub mod pallet {
 			let account_id = ensure_signed(origin)?;
 
 			let dna = vec![0, 1, 2]; // TODO: Generic DNA
-			let token_data = TokenData {
-				dna,
-			};
+			let token_data = TokenData::new(dna);
 			let token_id = OrmlNft::<T>::mint(&account_id, class_id.clone(), metadata.clone(), token_data.clone())?;
 
 			Self::deposit_event(Event::NftMinted(account_id, class_id, token_id, metadata, token_data));
