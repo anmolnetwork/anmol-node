@@ -47,6 +47,8 @@ sp-version = { default-features = false, version = '3.0.0' }
 
 # local dependencies
 pallet-kitties = { default-features = false, path = '../pallets/kitties', version = '0.1.0' }
+pallet-nft = { default-features = false, path = '../pallets/nft', version = '0.1.0' }
+orml-nft = { version = "0.4.0", default-features = false }
 
 [features]
 default = ['std']
@@ -73,6 +75,8 @@ std = [
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
     'pallet-kitties/std',
+    'pallet-nft/std',
+    'orml-nft/std',
     'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
