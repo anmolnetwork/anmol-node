@@ -19,5 +19,10 @@
     "ClassData": {},
     "TokenData": {
         "dna": "Vec<u8>"
+    },
+    "PendingNft": {
+        "account_id": "AccountId",
+        "class_id": "ClassId",
+        "token_data": "TokenData"
     }
 }
