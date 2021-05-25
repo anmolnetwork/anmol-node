@@ -42,6 +42,15 @@ pub struct TokenData {
 	// To be expanded
 }
 
+#[cfg(test)]
+impl TokenData {
+	fn new(dna: Dna) -> Self {
+		TokenData {
+			dna,
+		}
+	}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
