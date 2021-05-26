@@ -5,10 +5,16 @@ use frame_support::{
 	dispatch::DispatchResultWithPostInfo, pallet_prelude::*,
 	storage::{IterableStorageDoubleMap},
 };
-use frame_system::pallet_prelude::*;
+use frame_system::{
+	pallet_prelude::*,
+	offchain::{CreateSignedTransaction, AppCrypto},
+};
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
 use sp_std::vec::Vec;
+use sp_core::{
+	crypto::KeyTypeId,
+};
 use orml_nft::Module as OrmlNft;
 
 #[cfg(test)]
@@ -16,6 +22,27 @@ mod mock;
 
 #[cfg(test)]
 mod tests;
+
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"demo");
+
+pub mod crypto {
+	use crate::KEY_TYPE;
+	use sp_runtime::app_crypto::{app_crypto, sr25519};
+	use sp_runtime::{MultiSignature, MultiSigner};
+	use frame_system::{
+		offchain::{AppCrypto},
+	};
+
+	app_crypto!(sr25519, KEY_TYPE);
+
+	pub struct TestAuthId;
+
+	impl AppCrypto<MultiSigner, MultiSignature> for TestAuthId {
+		type RuntimeAppPublic = Public;
+		type GenericSignature = sp_core::sr25519::Signature;
+		type GenericPublic = sp_core::sr25519::Public;
+	}
+}
 
 pub type Dna = Vec<u8>;
 pub type Cid = Vec<u8>;
@@ -56,7 +83,12 @@ pub mod pallet {
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + orml_nft::Config<TokenData = TokenData, ClassData = ClassData> {
+	pub trait Config: frame_system::Config
+		+ orml_nft::Config<TokenData = TokenData, ClassData = ClassData>
+		+ CreateSignedTransaction<Call<Self>>
+	{
+		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+		type Call: From<Call<Self>>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 	}
 
