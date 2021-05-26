@@ -7,7 +7,7 @@ use frame_support::{
 };
 use frame_system::{
 	pallet_prelude::*,
-	offchain::{CreateSignedTransaction, AppCrypto},
+	offchain::{CreateSignedTransaction, AppCrypto, Signer, SendSignedTransaction},
 };
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
@@ -23,7 +23,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"demo");
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"_nft");
 
 pub mod crypto {
 	use crate::KEY_TYPE;
@@ -99,6 +99,12 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type NftPendingQueue<T: Config> = StorageValue<_, Vec<PendingNftOf<T>>, ValueQuery>;
 
+	#[pallet::error]
+	pub enum Error<T> {
+		NoLocalAccountForSigning,
+		OffchainSignedTxError,
+	}
+
 	#[pallet::event]
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -140,8 +146,12 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 4))]
-		pub fn root_mint_nft(origin: OriginFor<T>, metadata: Cid, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
-			let _ = ensure_root(origin)?;
+		pub fn mint_nft(origin: OriginFor<T>, metadata: Cid, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
+			let _account_id = ensure_signed(origin)?;
+
+			// TODO: Check if account_id is signed by off-chain worker
+
+			// TODO: Remove from NftPendingQueue
 
 			let token_id = OrmlNft::<T>::mint(
 				&pending_nft.account_id,
@@ -149,6 +159,8 @@ pub mod pallet {
 				metadata.clone(),
 				pending_nft.token_data.clone(),
 			)?;
+
+			debug::info!("--- Nft minted: {:?}", pending_nft);
 
 			Self::deposit_event(Event::NftMinted(token_id, metadata, pending_nft));
 			Ok(().into())
@@ -189,6 +201,33 @@ pub mod pallet {
 			}
 			
 			debug::info!("--- Create a new NFT on-chain");
+
+			// TODO: Replace metadata with IPFS CID
+			let metadata = Vec::new();
+
+			let _result = Self::offchain_send_signed_tx(metadata, pending_nft);
+			// TODO: Handle result errors
+		}
+
+		fn offchain_send_signed_tx(metadata: Cid, pending_nft: PendingNftOf<T>) -> Result<(), Error<T>> {
+			let signer = Signer::<T, T::AuthorityId>::any_account();
+			let result = signer.send_signed_transaction(|_acct|
+				Call::mint_nft(metadata.clone(), pending_nft.clone())
+			);
+
+			debug::info!("--- offchain_send_signed_tx");
+	
+			if let Some((acc, res)) = result {
+				if res.is_err() {
+					debug::error!("--- Failure: offchain_send_signed_tx: tx sent: {:?}, error: {:?}", acc.id, res);
+					return Err(Error::<T>::OffchainSignedTxError);
+				}
+
+				return Ok(());
+			} 
+
+			debug::error!("--- No local account available");
+			return Err(Error::<T>::NoLocalAccountForSigning);
 		}
 	}
 }
