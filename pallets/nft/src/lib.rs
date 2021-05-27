@@ -7,7 +7,7 @@ use frame_support::{
 };
 use frame_system::{
 	pallet_prelude::*,
-	offchain::{CreateSignedTransaction, AppCrypto, Signer, SendSignedTransaction},
+	offchain::{self, CreateSignedTransaction, AppCrypto, Signer, SendSignedTransaction},
 };
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
@@ -18,6 +18,7 @@ use sp_std::{
 use sp_core::{
 	crypto::KeyTypeId,
 };
+use sp_runtime::{DispatchError};
 use orml_nft::Module as OrmlNft;
 
 #[cfg(test)]
@@ -30,8 +31,10 @@ pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"_nft");
 
 pub mod crypto {
 	use crate::KEY_TYPE;
-	use sp_runtime::app_crypto::{app_crypto, sr25519};
-	use sp_runtime::{MultiSignature, MultiSigner};
+	use sp_runtime::{
+		app_crypto::{app_crypto, sr25519},
+		MultiSignature, MultiSigner,
+	};
 	use frame_system::{
 		offchain::{AppCrypto},
 	};
@@ -47,8 +50,7 @@ pub mod crypto {
 	}
 }
 
-pub type Dna = Vec<u8>;
-pub type Cid = Vec<u8>;
+pub type TextMessage = Vec<u8>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Ord)]
 pub struct PendingNft<AccountId, ClassId> {
@@ -78,13 +80,13 @@ pub struct ClassData {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, PartialOrd, Ord)]
 pub struct TokenData {
-	dna: Dna,
+	dna: TextMessage,
 	// To be expanded
 }
 
 #[cfg(test)]
 impl TokenData {
-	fn new(dna: Dna) -> Self {
+	fn new(dna: TextMessage) -> Self {
 		TokenData {
 			dna,
 		}
@@ -123,15 +125,17 @@ pub mod pallet {
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		NftClassCreated(T::AccountId, T::ClassId, ClassData, Cid),
+		NftClassCreated(T::AccountId, T::ClassId, ClassData, TextMessage),
 		NftRequest(PendingNftOf<T>),
-		NftMinted(PendingNftOf<T>, Cid),
+		CancelNftRequest(TextMessage, PendingNftOf<T>),
+		NftMinted(PendingNftOf<T>, TextMessage),
+		NftError(DispatchError),
 	}
 
 	#[pallet::call]
 	impl<T:Config> Pallet<T> {
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2))]
-		pub fn create_nft_class(origin: OriginFor<T>, metadata: Cid) -> DispatchResultWithPostInfo {
+		pub fn create_nft_class(origin: OriginFor<T>, metadata: TextMessage) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
 			let class_data = ClassData{}; // TODO: To be expanded
@@ -159,10 +163,20 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
-		pub fn mint_nft(origin: OriginFor<T>, metadata: Cid, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
+		pub fn cancel_nft_request(origin: OriginFor<T>, pending_nft: PendingNftOf<T>, reason: TextMessage) -> DispatchResultWithPostInfo {
 			let _account_id = ensure_signed(origin)?;
+			// TODO: Check if account_id is signed by off-chain worker
 
+			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
+
+			Self::deposit_event(Event::CancelNftRequest(reason, pending_nft));
+			Ok(().into())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
+		pub fn mint_nft(origin: OriginFor<T>, metadata: TextMessage, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
+			let _account_id = ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
 			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
@@ -176,6 +190,8 @@ pub mod pallet {
 
 			if let Err(error) = minting_result {
 				debug::error!("--- Nft minting error: {:?}", error);
+				Self::deposit_event(Event::NftError(error));
+
 				return Err(error.into())
 			}
 
@@ -216,15 +232,15 @@ pub mod pallet {
 	impl<T:Config> Pallet<T> {
 		fn execute_nft_from_pending_queue(pending_nft: PendingNftOf<T>) {
 			debug::RuntimeLogger::init();
-			debug::info!("--- execute_nft_from_pending_queue(): {:?}", pending_nft);
+			debug::info!("--- Execute nft from pending queue: {:?}", pending_nft);
 
 			let mut tokens_iterator = <orml_nft::Tokens<T> as IterableStorageDoubleMap<T::ClassId, T::TokenId, orml_nft::TokenInfoOf<T>>>
 				::iter_prefix(pending_nft.class_id);
 
 			let mut unique_dna = true;
 			while let Some((token_id, token_info)) = tokens_iterator.next() {
-				debug::info!("--- token_id: {:?}, token_info: {:?}", token_id, token_info);
-				
+				debug::info!("--- Token to compare uniqueness: token_id: {:?}, token_info: {:?}", token_id, token_info);
+
 				if pending_nft.token_data.dna == token_info.data.dna {
 					unique_dna = false;
 					break;
@@ -233,35 +249,34 @@ pub mod pallet {
 
 			if !unique_dna {
 				debug::info!("--- Not a unique dna: {:?}", pending_nft.token_data.dna);
+
+				let cancel_nft_closure = |_: &_| return Call::cancel_nft_request(pending_nft.clone(), b"DNA is not unique".to_vec());
+				let _result = Self::send_signed(cancel_nft_closure);
 				return
 			}
 
 			// TODO: Replace metadata with IPFS CID
 			let metadata = Vec::new();
 
-			let _result = Self::offchain_send_signed_tx(metadata, pending_nft);
-			// TODO: Handle result errors
+			let mint_nft_closure = |_: &_| return Call::mint_nft(metadata.clone(), pending_nft.clone());
+			let _result = Self::send_signed(mint_nft_closure);
 		}
 
-		fn offchain_send_signed_tx(metadata: Cid, pending_nft: PendingNftOf<T>) -> Result<(), Error<T>> {
-			debug::info!("--- offchain_send_signed_tx");
-
+		fn send_signed(call_closure: impl Fn(&offchain::Account<T>) -> Call<T>) -> Result<(), Error<T>> {
 			let signer = Signer::<T, T::AuthorityId>::any_account();
-			let result = signer.send_signed_transaction(|_acct|
-				Call::mint_nft(metadata.clone(), pending_nft.clone())
-			);
+			let result = signer.send_signed_transaction(call_closure);
 
 			if let Some((acc, res)) = result {
 				if res.is_err() {
-					debug::error!("--- Failure: offchain_send_signed_tx: {:?}, error: {:?}", acc.id, res);
-					return Err(Error::<T>::OffchainSignedTxError);
+					debug::error!("--- Send signed - Error: {:?}, account id: {:?}", res, acc.id);
+					return Err(Error::<T>::OffchainSignedTxError)
 				}
 
-				debug::info!("--- Transaction sent correctly");
+				debug::info!("--- Send signed - Ok");
 				return Ok(());
 			} 
 
-			debug::error!("--- No local account available");
+			debug::error!("--- Send signed - No local account available");
 			return Err(Error::<T>::NoLocalAccountForSigning);
 		}
 	}

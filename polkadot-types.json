@@ -13,12 +13,12 @@
     },
     "TokenInfoOf": "TokenInfo",
 
-    "Cid": "Vec<u8>",
+    "TextMessage": "Vec<u8>",
     "ClassId": "u32",
     "TokenId": "u32",
     "ClassData": {},
     "TokenData": {
-        "dna": "Vec<u8>"
+        "dna": "TextMessage"
     },
     "PendingNft": {
         "account_id": "AccountId",
