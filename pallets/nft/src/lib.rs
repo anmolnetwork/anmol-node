@@ -2,7 +2,7 @@
 
 pub use pallet::*;
 use frame_support::{
-	dispatch::DispatchResultWithPostInfo, pallet_prelude::*,
+	dispatch::{DispatchResultWithPostInfo, DispatchResult}, pallet_prelude::*,
 	storage::{IterableStorageDoubleMap},
 };
 use frame_system::{
@@ -11,7 +11,10 @@ use frame_system::{
 };
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
-use sp_std::vec::Vec;
+use sp_std::{
+	vec::Vec,
+	cmp::{Ordering},
+};
 use sp_core::{
 	crypto::KeyTypeId,
 };
@@ -47,11 +50,21 @@ pub mod crypto {
 pub type Dna = Vec<u8>;
 pub type Cid = Vec<u8>;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Ord)]
 pub struct PendingNft<AccountId, ClassId> {
 	account_id: AccountId,
 	class_id: ClassId,
 	token_data: TokenData,
+}
+
+impl<AccountId, ClassId> PartialOrd for PendingNft<AccountId, ClassId>
+where
+	AccountId: Ord,
+	ClassId: Ord,
+{
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 pub type PendingNftOf<T> = PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
@@ -63,7 +76,7 @@ pub struct ClassData {
 }
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, PartialOrd, Ord)]
 pub struct TokenData {
 	dna: Dna,
 	// To be expanded
@@ -103,6 +116,7 @@ pub mod pallet {
 	pub enum Error<T> {
 		NoLocalAccountForSigning,
 		OffchainSignedTxError,
+		TryToRemoveNftWhichDoesNotExist,
 	}
 
 	#[pallet::event]
@@ -111,7 +125,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		NftClassCreated(T::AccountId, T::ClassId, ClassData, Cid),
 		NftRequest(PendingNftOf<T>),
-		NftMinted(T::TokenId, Cid, PendingNftOf<T>),
+		NftMinted(PendingNftOf<T>, Cid),
 	}
 
 	#[pallet::call]
@@ -145,25 +159,47 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 4))]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
 		pub fn mint_nft(origin: OriginFor<T>, metadata: Cid, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
 			let _account_id = ensure_signed(origin)?;
 
 			// TODO: Check if account_id is signed by off-chain worker
 
-			// TODO: Remove from NftPendingQueue
+			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
 
-			let token_id = OrmlNft::<T>::mint(
+			let minting_result = OrmlNft::<T>::mint(
 				&pending_nft.account_id,
 				pending_nft.class_id.clone(),
 				metadata.clone(),
 				pending_nft.token_data.clone(),
-			)?;
+			);
+
+			if let Err(error) = minting_result {
+				debug::error!("--- Nft minting error: {:?}", error);
+				return Err(error.into())
+			}
 
 			debug::info!("--- Nft minted: {:?}", pending_nft);
 
-			Self::deposit_event(Event::NftMinted(token_id, metadata, pending_nft));
+			Self::deposit_event(Event::NftMinted(pending_nft, metadata));
 			Ok(().into())
+		}
+	}
+
+	impl<T:Config> Pallet<T> {
+		fn remove_nft_from_pending_queue(pending_nft: PendingNftOf<T>) -> DispatchResult {
+			let mut nft_pending_queue = NftPendingQueue::<T>::get();
+
+			match nft_pending_queue.binary_search(&pending_nft) {
+				Ok(index) => {
+					nft_pending_queue.remove(index);
+					NftPendingQueue::<T>::put(nft_pending_queue);
+					debug::info!("--- Removed nft from pending_queue: {:?}", pending_nft);
+
+					Ok(())
+				},
+				Err(_) => Err(Error::<T>::TryToRemoveNftWhichDoesNotExist.into())
+			}
 		}
 	}
 
@@ -217,7 +253,7 @@ pub mod pallet {
 
 			if let Some((acc, res)) = result {
 				if res.is_err() {
-					debug::error!("--- Failure: offchain_send_signed_tx: tx sent: {:?}, error: {:?}", acc.id, res);
+					debug::error!("--- Failure: offchain_send_signed_tx: {:?}, error: {:?}", acc.id, res);
 					return Err(Error::<T>::OffchainSignedTxError);
 				}
 
