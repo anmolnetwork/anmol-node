@@ -199,8 +199,6 @@ pub mod pallet {
 				debug::info!("--- Not a unique dna: {:?}", pending_nft.token_data.dna);
 				return
 			}
-			
-			debug::info!("--- Create a new NFT on-chain");
 
 			// TODO: Replace metadata with IPFS CID
 			let metadata = Vec::new();
@@ -210,19 +208,20 @@ pub mod pallet {
 		}
 
 		fn offchain_send_signed_tx(metadata: Cid, pending_nft: PendingNftOf<T>) -> Result<(), Error<T>> {
+			debug::info!("--- offchain_send_signed_tx");
+
 			let signer = Signer::<T, T::AuthorityId>::any_account();
 			let result = signer.send_signed_transaction(|_acct|
 				Call::mint_nft(metadata.clone(), pending_nft.clone())
 			);
 
-			debug::info!("--- offchain_send_signed_tx");
-	
 			if let Some((acc, res)) = result {
 				if res.is_err() {
 					debug::error!("--- Failure: offchain_send_signed_tx: tx sent: {:?}, error: {:?}", acc.id, res);
 					return Err(Error::<T>::OffchainSignedTxError);
 				}
 
+				debug::info!("--- Transaction sent correctly");
 				return Ok(());
 			} 
 
