@@ -1,9 +1,8 @@
 use crate::{mock::{Event, *}};
-use frame_support::{assert_ok, assert_noop, error};
+use frame_support::{assert_ok, assert_noop};
 
 const ALICE: AccountId = AccountId::new([1u8; 32]);
 const CLASS_ID: <Runtime as orml_nft::Config>::ClassId = 0;
-const TOKEN_ID: <Runtime as orml_nft::Config>::TokenId = 0;
 
 #[test]
 fn mint_nft_works() {
@@ -15,14 +14,17 @@ fn mint_nft_works() {
         };
 
         assert_noop!(
-            Nft::root_mint_nft(Origin::signed(ALICE), vec![0], pending_nft.clone()),
-            error::BadOrigin
+            Nft::mint_nft(Origin::signed(ALICE), vec![0], pending_nft.clone()),
+            crate::Error::<Runtime>::TryToRemoveNftWhichDoesNotExist
         );
 
-        assert_noop!(
-            Nft::root_mint_nft(Origin::root(), vec![0], pending_nft.clone()),
-            orml_nft::Error::<Runtime>::ClassNotFound
-        );
+        assert_ok!(Nft::nft_request(Origin::signed(ALICE), CLASS_ID, pending_nft.clone().token_data));
+
+        // TODO: DispatchError for ClassNotFound
+        // assert_noop!(
+        //     Nft::mint_nft(Origin::signed(ALICE), vec![0], pending_nft.clone()),
+        //     crate::Error::<Runtime>::NftError(orml_nft::Error::<Runtime>::ClassNotFound)
+        // );
 
         assert_ok!(Nft::create_nft_class(Origin::signed(ALICE), vec![1]));
 
@@ -36,13 +38,12 @@ fn mint_nft_works() {
         );
         assert_eq!(last_event(), event);
         
-        assert_ok!(Nft::root_mint_nft(Origin::root(), vec![2], pending_nft.clone()));
+        assert_ok!(Nft::mint_nft(Origin::signed(ALICE), vec![2], pending_nft.clone()));
 
         let event = Event::pallet_nft(
             crate::Event::NftMinted(
-                TOKEN_ID,
-                vec![2],
                 pending_nft,
+                vec![2],
             )
         );
         assert_eq!(last_event(), event);
