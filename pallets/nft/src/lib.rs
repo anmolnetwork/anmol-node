@@ -165,7 +165,7 @@ pub mod pallet {
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
 		pub fn cancel_nft_request(origin: OriginFor<T>, pending_nft: PendingNftOf<T>, reason: TextMessage) -> DispatchResultWithPostInfo {
-			let _account_id = ensure_signed(origin)?;
+			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
 			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
@@ -176,7 +176,7 @@ pub mod pallet {
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
 		pub fn mint_nft(origin: OriginFor<T>, metadata: TextMessage, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
-			let _account_id = ensure_signed(origin)?;
+			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
 			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
