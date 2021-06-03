@@ -50,7 +50,7 @@ pub mod crypto {
 	}
 }
 
-pub type TextMessage = Vec<u8>;
+pub type ByteVector = Vec<u8>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Ord)]
 pub struct PendingNft<AccountId, ClassId> {
@@ -80,13 +80,13 @@ pub struct ClassData {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, PartialOrd, Ord)]
 pub struct TokenData {
-	dna: TextMessage,
+	dna: ByteVector,
 	// To be expanded
 }
 
 #[cfg(test)]
 impl TokenData {
-	fn new(dna: TextMessage) -> Self {
+	fn new(dna: ByteVector) -> Self {
 		TokenData {
 			dna,
 		}
@@ -125,17 +125,17 @@ pub mod pallet {
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		NftClassCreated(T::AccountId, T::ClassId, ClassData, TextMessage),
+		NftClassCreated(T::AccountId, T::ClassId, ClassData, ByteVector),
 		NftRequest(PendingNftOf<T>),
-		CancelNftRequest(TextMessage, PendingNftOf<T>),
-		NftMinted(PendingNftOf<T>, TextMessage),
+		CancelNftRequest(ByteVector, PendingNftOf<T>),
+		NftMinted(PendingNftOf<T>, ByteVector),
 		NftError(DispatchError),
 	}
 
 	#[pallet::call]
 	impl<T:Config> Pallet<T> {
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2))]
-		pub fn create_nft_class(origin: OriginFor<T>, metadata: TextMessage) -> DispatchResultWithPostInfo {
+		pub fn create_nft_class(origin: OriginFor<T>, metadata: ByteVector) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
 			let class_data = ClassData{}; // TODO: To be expanded
@@ -164,7 +164,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
-		pub fn cancel_nft_request(origin: OriginFor<T>, pending_nft: PendingNftOf<T>, reason: TextMessage) -> DispatchResultWithPostInfo {
+		pub fn cancel_nft_request(origin: OriginFor<T>, pending_nft: PendingNftOf<T>, reason: ByteVector) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
@@ -175,7 +175,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
-		pub fn mint_nft(origin: OriginFor<T>, metadata: TextMessage, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
+		pub fn mint_nft(origin: OriginFor<T>, metadata: ByteVector, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
