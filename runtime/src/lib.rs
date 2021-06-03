@@ -277,7 +277,7 @@ impl pallet_kitties::Config for Runtime {
 }
 
 impl pallet_nft::Config for Runtime {
-	type AuthorityId = pallet_nft::crypto::TestAuthId;
+	type AuthorityId = pallet_nft::offchain::crypto::TestAuthId;
 	type Call = Call;
 	type Event = Event;
 }

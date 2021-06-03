@@ -58,7 +58,7 @@ impl frame_system::Config for Runtime {
 pub type AccountId = AccountId32;
 
 impl pallet_nft::Config for Runtime {
-	type AuthorityId = pallet_nft::crypto::TestAuthId;
+	type AuthorityId = pallet_nft::offchain::crypto::TestAuthId;
 	type Call = Call;
 	type Event = Event;
 }
