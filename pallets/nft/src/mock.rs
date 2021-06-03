@@ -1,9 +1,13 @@
 use crate as pallet_nft;
 use sp_core::{H256, crypto::AccountId32};
-use frame_support::{parameter_types};
+use frame_support::{parameter_types, debug};
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, IdentityLookup, SaturatedConversion},
 	testing::Header,
+	generic, MultiSignature,
+};
+use frame_system::{
+	offchain::{CreateSignedTransaction, AppCrypto, SigningTypes, SendTransactionTypes},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
@@ -33,7 +37,7 @@ impl frame_system::Config for Runtime {
 	type DbWeight = ();
 	type Origin = Origin;
 	type Call = Call;
-	type Index = u64;
+	type Index = Index;
 	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
@@ -54,6 +58,8 @@ impl frame_system::Config for Runtime {
 pub type AccountId = AccountId32;
 
 impl pallet_nft::Config for Runtime {
+	type AuthorityId = pallet_nft::crypto::TestAuthId;
+	type Call = Call;
 	type Event = Event;
 }
 
@@ -62,6 +68,75 @@ impl orml_nft::Config for Runtime {
 	type TokenId = u32;
 	type ClassData = pallet_nft::ClassData;
 	type TokenData = pallet_nft::TokenData;
+}
+
+pub type SignedExtra = (
+	frame_system::CheckSpecVersion<Runtime>,
+	frame_system::CheckTxVersion<Runtime>,
+	frame_system::CheckGenesis<Runtime>,
+	frame_system::CheckEra<Runtime>,
+	frame_system::CheckNonce<Runtime>,
+	frame_system::CheckWeight<Runtime>,
+	// pallet_transaction_payment::ChargeTransactionPayment<Runtime>
+);
+pub type Signature = MultiSignature;
+pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
+pub type Index = u32;
+
+impl<T> CreateSignedTransaction<T> for Runtime
+where
+	Call: From<T>,
+{
+	fn create_transaction<C: AppCrypto<Self::Public, Self::Signature>>(
+		call: Call,
+		_public: <Signature as sp_runtime::traits::Verify>::Signer,
+		account: AccountId,
+		index: Index,
+	) -> Option<(
+		Call,
+		<UncheckedExtrinsic as sp_runtime::traits::Extrinsic>::SignaturePayload,
+	)> {
+		let period = BlockHashCount::get() as u64;
+		let current_block = System::block_number()
+			.saturated_into::<u64>()
+			.saturating_sub(1);
+		// let tip = 0;
+		let extra: SignedExtra = (
+			frame_system::CheckSpecVersion::<Runtime>::new(),
+			frame_system::CheckTxVersion::<Runtime>::new(),
+			frame_system::CheckGenesis::<Runtime>::new(),
+			frame_system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
+			frame_system::CheckNonce::<Runtime>::from(index),
+			frame_system::CheckWeight::<Runtime>::new(),
+			// pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+		);
+
+		#[cfg_attr(not(feature = "std"), allow(unused_variables))]
+		let raw_payload = SignedPayload::new(call, extra)
+			.map_err(|e| {
+				debug::error!("SignedPayload error: {:?}", e);
+			})
+			.ok()?;
+
+		// let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
+
+		let address = account;
+		let (call, _extra, _) = raw_payload.deconstruct();
+		Some((call, (address, (), ())))
+	}
+}
+
+impl SigningTypes for Runtime {
+	type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+	type Signature = Signature;
+}
+
+impl<T> SendTransactionTypes<T> for Runtime
+where
+	Call: From<T>,
+{
+	type OverarchingCall = Call;
+	type Extrinsic = UncheckedExtrinsic;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
