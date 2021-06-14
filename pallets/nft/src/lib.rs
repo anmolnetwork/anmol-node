@@ -27,6 +27,7 @@ mod mock;
 mod tests;
 
 pub mod offchain;
+pub mod local_storage;
 
 pub type ByteVector = Vec<u8>;
 
@@ -47,7 +48,8 @@ where
     }
 }
 
-pub type PendingNftOf<T> = PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
+type PendingNftOf<T> = PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
+pub type PendingNftQueueOf<T> = Vec<PendingNftOf<T>>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
@@ -90,7 +92,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub(super) type NftPendingQueue<T: Config> = StorageValue<_, Vec<PendingNftOf<T>>, ValueQuery>;
+	pub(super) type PendingNftQueue<T: Config> = StorageValue<_, PendingNftQueueOf<T>, ValueQuery>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -137,7 +139,7 @@ pub mod pallet {
 				token_data,
 			};
 
-			NftPendingQueue::<T>::mutate(|pending_nft_queue| {
+			PendingNftQueue::<T>::mutate(|pending_nft_queue| {
 				pending_nft_queue.push(pending_nft.clone());
 			});
 
@@ -186,12 +188,12 @@ pub mod pallet {
 
 	impl<T:Config> Pallet<T> {
 		fn remove_nft_from_pending_queue(pending_nft: PendingNftOf<T>) -> DispatchResult {
-			let mut nft_pending_queue = NftPendingQueue::<T>::get();
+			let mut nft_pending_queue = PendingNftQueue::<T>::get();
 
 			match nft_pending_queue.binary_search(&pending_nft) {
 				Ok(index) => {
 					nft_pending_queue.remove(index);
-					NftPendingQueue::<T>::put(nft_pending_queue);
+					PendingNftQueue::<T>::put(nft_pending_queue);
 					debug::info!("--- Removed nft from pending_queue: {:?}", pending_nft);
 
 					Ok(())
@@ -204,14 +206,14 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(block_number: T::BlockNumber) {
-			let key = offchain::get_offchain_new_nft_items_key::<T>(block_number);
-			let pending_nft_queue = NftPendingQueue::<T>::get();
+			let key = offchain::offchain_new_nft_requests_key();
+			let pending_nft_queue = PendingNftQueue::<T>::get();
 
 			sp_io::offchain_index::set(&key.0, &pending_nft_queue.encode());
 			
 			debug::info!("--- on_finalize block_number: {:?}, key: {:x}, value: {:?}", block_number, key, pending_nft_queue);
 			
-			NftPendingQueue::<T>::put(Vec::<PendingNftOf<T>>::new());
+			PendingNftQueue::<T>::put(PendingNftQueueOf::<T>::new());
 		}
 
 		fn offchain_worker(block_number: T::BlockNumber) {
