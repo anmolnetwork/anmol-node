@@ -2,7 +2,7 @@
 
 pub use pallet::*;
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, DispatchResult}, pallet_prelude::*,
+	dispatch::{DispatchResultWithPostInfo}, pallet_prelude::*,
 };
 use frame_system::{
 	pallet_prelude::*,
@@ -28,6 +28,7 @@ mod tests;
 
 pub mod offchain;
 pub mod local_storage;
+pub mod utils;
 
 pub type ByteVector = Vec<u8>;
 
@@ -103,6 +104,9 @@ pub mod pallet {
 		OffchainValueNotFound,
 		OffchainValueDecode,
 		OffchainValueMutate,
+		TryToRemovePendingNftWhichDoesNotExist,
+		IncorrectNftKeyHash,
+		RemoveVectorItem,
 	}
 
 	#[pallet::event]
@@ -112,7 +116,7 @@ pub mod pallet {
 		NftClassCreated(T::AccountId, T::ClassId, ClassData, ByteVector),
 		NftRequest(PendingNftOf<T>),
 		CancelNftRequest(ByteVector, PendingNftOf<T>),
-		NftMinted(PendingNftOf<T>, ByteVector),
+		NftMinted(PendingNftOf<T>, local_storage::KeyHash),
 		NftError(DispatchError),
 	}
 
@@ -152,54 +156,39 @@ pub mod pallet {
 			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
-			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
-
 			Self::deposit_event(Event::CancelNftRequest(reason, pending_nft));
 			Ok(().into())
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
-		pub fn mint_nft(origin: OriginFor<T>, metadata: ByteVector, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
+		pub fn mint_nft(origin: OriginFor<T>, key_hash: local_storage::KeyHash, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
-			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
+			if key_hash != local_storage::get_nft_key_hash::<T>(pending_nft.class_id, pending_nft.token_data.clone()) {
+				debug::error!("--- Error: IncorrectNftKeyHash");
+				return Err(Error::<T>::IncorrectNftKeyHash.into())
+			}
 
 			let minting_result = OrmlNft::<T>::mint(
 				&pending_nft.account_id,
-				pending_nft.class_id.clone(),
-				metadata.clone(),
+				pending_nft.class_id,
+				key_hash.to_vec(),
 				pending_nft.token_data.clone(),
 			);
 
 			if let Err(error) = minting_result {
+				sp_io::offchain_index::clear(&key_hash);
+
 				debug::error!("--- Nft minting error: {:?}", error);
 				Self::deposit_event(Event::NftError(error));
-
 				return Err(error.into())
 			}
 
 			debug::info!("--- Nft minted: {:?}", pending_nft);
 
-			Self::deposit_event(Event::NftMinted(pending_nft, metadata));
+			Self::deposit_event(Event::NftMinted(pending_nft, key_hash));
 			Ok(().into())
-		}
-	}
-
-	impl<T:Config> Pallet<T> {
-		fn remove_nft_from_pending_queue(pending_nft: PendingNftOf<T>) -> DispatchResult {
-			let mut nft_pending_queue = PendingNftQueue::<T>::get();
-
-			match nft_pending_queue.binary_search(&pending_nft) {
-				Ok(index) => {
-					nft_pending_queue.remove(index);
-					PendingNftQueue::<T>::put(nft_pending_queue);
-					debug::info!("--- Removed nft from pending_queue: {:?}", pending_nft);
-
-					Ok(())
-				},
-				Err(_) => Err(Error::<T>::TryToRemoveNftWhichDoesNotExist.into())
-			}
 		}
 	}
 
@@ -211,7 +200,7 @@ pub mod pallet {
 
 			sp_io::offchain_index::set(&key.0, &pending_nft_queue.encode());
 			
-			debug::info!("--- on_finalize block_number: {:?}, key: {:x}, value: {:?}", block_number, key, pending_nft_queue);
+			debug::info!("--- on_finalize block_number: {:?}, new_nft_requests_key: {:x}, new_nft_requests_value: {:?}", block_number, key, pending_nft_queue);
 			
 			PendingNftQueue::<T>::put(PendingNftQueueOf::<T>::new());
 		}

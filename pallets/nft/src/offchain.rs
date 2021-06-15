@@ -4,17 +4,17 @@ use crate::{
     Config,
     Error,
     pallet::{Call},
-    local_storage::{LocalStorageValue, VecKey},
+    local_storage::{LocalStorageValue, VecKey, get_nft_key_hash},
+    ByteVector,
+    utils::{remove_vector_item},
 };
+use codec::{Encode, Decode};
 use sp_core::{
 	crypto::KeyTypeId,
 };
-use sp_std::{
-    vec::Vec,
-};
 use frame_support::{
-    storage::{IterableStorageDoubleMap},
     pallet_prelude::{debug},
+    RuntimeDebug,
 };
 use frame_system::{
     offchain::{Signer, SendSignedTransaction},
@@ -43,6 +43,14 @@ pub mod crypto {
 	}
 }
 
+#[derive(Encode, Decode, Clone, RuntimeDebug, Default)]
+struct LocalNftMetadata<ClassId: Default> {
+    mould_id: ClassId,
+    dna: ByteVector,
+}
+
+type LocalNftMetadataOf<T> = LocalNftMetadata<<T as orml_nft::Config>::ClassId>;
+
 const NEW_NFT_REQUESTS_KEY: &[u8] = b"new_nft_requests";
 const NFT_PENDING_QUEUE: &[u8] = b"nft_pending_queue";
 
@@ -52,13 +60,19 @@ pub fn hook_init<T: Config>(block_number: T::BlockNumber) {
     let new_nft_requests = LocalStorageValue::<PendingNftQueueOf<T>>::new(NEW_NFT_REQUESTS_KEY);
     let pending_nft_queue = LocalStorageValue::<PendingNftQueueOf<T>>::new(NFT_PENDING_QUEUE);
 
-    let result = offchain_update_pending_nft_queue::<T>(pending_nft_queue, new_nft_requests);
+    let result = offchain_update_pending_nft_queue::<T>(pending_nft_queue.clone(), new_nft_requests);
 
     match result {
-        Ok(pending_nft_queue) => {
-            if pending_nft_queue.len() > 0 {
-                debug::info!("--- Pending nft queue: {:?}", pending_nft_queue);
-                execute_nft_from_pending_queue::<T>(pending_nft_queue[0].clone());
+        Ok(_) => {
+            if let Ok(queue) = pending_nft_queue.get::<T>() {
+                if queue.len() > 0 {
+                    debug::info!("--- Pending nft queue key: {:x}, value: {:?}", VecKey(NFT_PENDING_QUEUE.to_vec()), queue);
+
+                    let pending_nft = &queue[0];
+                    execute_nft_from_pending_queue::<T>(pending_nft.clone());
+
+                    let _: Result<_, Error<T>> = pending_nft_queue.mutate(|x| remove_vector_item(x, pending_nft));
+                }
             }
         },
         Err(x) => {
@@ -91,32 +105,23 @@ fn execute_nft_from_pending_queue<T: Config>(pending_nft: PendingNftOf<T>) {
     debug::RuntimeLogger::init();
     debug::info!("--- Execute nft from pending queue: {:?}", pending_nft);
 
-    let mut tokens_iterator = <orml_nft::Tokens<T> as IterableStorageDoubleMap<T::ClassId, T::TokenId, orml_nft::TokenInfoOf<T>>>
-        ::iter_prefix(pending_nft.class_id);
+    let key_hash = get_nft_key_hash::<T>(pending_nft.class_id, pending_nft.token_data.clone());
+    let local_nft_metadata = LocalStorageValue::<LocalNftMetadataOf<T>>::new(&key_hash);
 
-    let mut unique_dna = true;
-    while let Some((token_id, token_info)) = tokens_iterator.next() {
-        debug::info!("--- Token to compare uniqueness: token_id: {:?}, token_info: {:?}", token_id, token_info);
-
-        if pending_nft.token_data.dna == token_info.data.dna {
-            unique_dna = false;
-            break;
-        }
-    }
-
-    if !unique_dna {
-        debug::info!("--- Not a unique dna: {:?}", pending_nft.token_data.dna);
-
-        let cancel_nft_closure = |_: &frame_system::offchain::Account<T>| return Call::cancel_nft_request(pending_nft.clone(), b"DNA is not unique".to_vec());
-        let _result = send_signed(cancel_nft_closure);
+    if let Ok(value) = local_nft_metadata.get::<T>() {
+        debug::error!("--- Error: local_nft_metadata already exist: {:?}", value);
         return
     }
 
-    // TODO: Replace metadata with IPFS CID
-    let metadata = Vec::new();
+    let mint_nft_closure = |_: &frame_system::offchain::Account<T>| return Call::mint_nft(key_hash, pending_nft.clone());
+    if let Ok(()) = send_signed(mint_nft_closure) {
+        let metadata = LocalNftMetadata {
+            mould_id: pending_nft.class_id,
+            dna: pending_nft.token_data.dna,
+        };
 
-    let mint_nft_closure = |_: &frame_system::offchain::Account<T>| return Call::mint_nft(metadata.clone(), pending_nft.clone());
-    let _result = send_signed(mint_nft_closure);
+        local_nft_metadata.set(&metadata);
+    }
 }
 
 fn send_signed<T: Config>(call_closure: impl Fn(&frame_system::offchain::Account<T>) -> Call<T>) -> Result<(), Error<T>> {
