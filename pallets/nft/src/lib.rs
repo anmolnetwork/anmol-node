@@ -102,8 +102,6 @@ pub mod pallet {
 		OffchainLock,
 		OffchainValueNotFound,
 		OffchainValueDecode,
-		OffchainValueMutate,
-		TryToRemovePendingNftWhichDoesNotExist,
 		IncorrectNftKeyHash,
 		RemoveVectorItem,
 	}
