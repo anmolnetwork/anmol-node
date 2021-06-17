@@ -99,7 +99,6 @@ pub mod pallet {
 	pub enum Error<T> {
 		NoLocalAccountForSigning,
 		OffchainSignedTxError,
-		TryToRemoveNftWhichDoesNotExist,
 		OffchainLock,
 		OffchainValueNotFound,
 		OffchainValueDecode,
