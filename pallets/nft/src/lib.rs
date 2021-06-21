@@ -18,6 +18,7 @@ use sp_std::{
 use sp_core::{
 	crypto::KeyTypeId,
 };
+use sp_std::convert::{TryInto};
 use sp_runtime::{DispatchError};
 use orml_nft::Module as OrmlNft;
 
@@ -51,6 +52,11 @@ pub mod crypto {
 }
 
 pub type ByteVector = Vec<u8>;
+
+pub enum Method {
+	GET,
+	POST,
+}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Ord)]
 pub struct PendingNft<AccountId, ClassId> {
@@ -119,6 +125,7 @@ pub mod pallet {
 		NoLocalAccountForSigning,
 		OffchainSignedTxError,
 		TryToRemoveNftWhichDoesNotExist,
+		NftHttpFetchingError
 	}
 
 	#[pallet::event]
@@ -200,9 +207,67 @@ pub mod pallet {
 			Self::deposit_event(Event::NftMinted(pending_nft, metadata));
 			Ok(().into())
 		}
+
+		#[pallet::weight(0)]
+		pub fn test_http_request(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+			Self::make_request(Method::GET, "http://localhost:3000".as_bytes().to_vec())?;
+
+			Ok(().into())
+		}
 	}
 
 	impl<T:Config> Pallet<T> {
+		fn make_request(method: Method, base_url: Vec<u8>) -> Result<Vec<u8>, Error<T>> {
+			let url: str = str::from_utf8(&base_url)?;
+			let http_url = "{BASE_URL}"
+				.to_string()
+				.replace("{BASE_URL}", &url);
+
+			const FETCH_TIMEOUT_PERIOD: u64 = 15_000;
+
+			let reward = TryInto::<u128>::try_into(nft_request_data.reward).unwrap_or(0);
+
+			let request_body = "{
+			\"score\": {SCORE},
+			\"scoreOutOf\": {SCORE_OUT_OF},
+			\"reward\": {REWARD},
+			\"sessionId\": {SESSION_ID}
+			}"
+				.to_string()
+				.replace("{SCORE}", &nft_request_data.score.to_string())
+				.replace("{SCORE_OUT_OF}", &nft_request_data.score_out_of.to_string())
+				.replace("{REWARD}", &reward.to_string())
+				.replace("{SESSION_ID}", &nft_request_data.session_id.to_string());
+
+			let mut request_vector = Vec::new();
+			request_vector.push(request_body.clone());
+
+			let request = rt_offchain::http::Request::post(&http_url, request_vector);
+
+			let timeout = sp_io::offchain::timestamp()
+				.add(rt_offchain::Duration::from_millis(FETCH_TIMEOUT_PERIOD));
+
+			let pending = request
+				.add_header("Content-Type", "application/json")
+				.deadline(timeout)
+				.send()
+				.map_err(|_| <Error<T>>::NftHttpFetchingError)?;
+
+			let response = pending
+				.try_wait(timeout)
+				.map_err(|_| <Error<T>>::NftHttpFetchingError)?
+				.map_err(|_| <Error<T>>::NftHttpFetchingError)?;
+
+			if response.code != 200 {
+				debug::error!("--- fetch_nft_hash Unexpected http request status code: {}", response.code);
+				return Err(<Error<T>>::NftHttpFetchingError);
+			}
+
+			let result = response.body().collect::<Vec<u8>>();
+
+			Ok(result)
+		}
+
 		fn remove_nft_from_pending_queue(pending_nft: PendingNftOf<T>) -> DispatchResult {
 			let mut nft_pending_queue = NftPendingQueue::<T>::get();
 
