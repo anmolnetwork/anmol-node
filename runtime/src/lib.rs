@@ -47,7 +47,7 @@ use frame_system::{
 /// Import the kitties pallet.
 pub use pallet_kitties;
 pub use pallet_nft;
-pub use orml_nft;
+pub use anmol_nft;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -282,7 +282,7 @@ impl pallet_nft::Config for Runtime {
 	type Event = Event;
 }
 
-impl orml_nft::Config for Runtime {
+impl anmol_nft::Config for Runtime {
 	type ClassId = u32;
 	type TokenId = u32;
 	type ClassData = pallet_nft::ClassData;
@@ -364,7 +364,7 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 		KittiesModule: pallet_kitties::{Module, Call, Storage, Event<T>},
 		NftModule: pallet_nft::{Module, Call, Storage, Event<T>},
-		OrmlNft: orml_nft::{Module, Storage},
+		AnmolNft: anmol_nft::{Module, Storage},
 	}
 );
 
