@@ -4,7 +4,7 @@ description = "NFT pallet for extended functionality"
 repository = "https://github.com/open-web3-stack/open-runtime-module-library/tree/master/nft"
 license = "Apache-2.0"
 version = "0.1.0"
-authors = ["Anmol Developers"]
+authors = ['DotMatrix <hello@dotmatrix.im>']
 edition = "2018"
 
 [dependencies]
