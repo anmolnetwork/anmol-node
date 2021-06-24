@@ -1,25 +1,21 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use pallet::*;
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, DispatchResult}, pallet_prelude::*,
-	storage::{IterableStorageDoubleMap},
+	dispatch::{DispatchResult, DispatchResultWithPostInfo},
+	pallet_prelude::*,
+	storage::IterableStorageDoubleMap,
 };
 use frame_system::{
+	offchain::{self, AppCrypto, CreateSignedTransaction, SendSignedTransaction, Signer},
 	pallet_prelude::*,
-	offchain::{self, CreateSignedTransaction, AppCrypto, Signer, SendSignedTransaction},
 };
-#[cfg(feature = "std")]
-use serde::{Serialize, Deserialize};
-use sp_std::{
-	vec::Vec,
-	cmp::{Ordering},
-};
-use sp_core::{
-	crypto::KeyTypeId,
-};
-use sp_runtime::{DispatchError};
 use orml_nft::Module as OrmlNft;
+pub use pallet::*;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+use sp_core::crypto::KeyTypeId;
+use sp_runtime::DispatchError;
+use sp_std::{cmp::Ordering, vec::Vec};
 
 #[cfg(test)]
 mod mock;
@@ -31,12 +27,10 @@ pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"_nft");
 
 pub mod crypto {
 	use crate::KEY_TYPE;
+	use frame_system::offchain::AppCrypto;
 	use sp_runtime::{
 		app_crypto::{app_crypto, sr25519},
 		MultiSignature, MultiSigner,
-	};
-	use frame_system::{
-		offchain::{AppCrypto},
 	};
 
 	app_crypto!(sr25519, KEY_TYPE);
@@ -65,11 +59,12 @@ where
 	ClassId: Ord,
 {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
+		Some(self.cmp(other))
+	}
 }
 
-pub type PendingNftOf<T> = PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
+pub type PendingNftOf<T> =
+	PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
@@ -87,9 +82,7 @@ pub struct TokenData {
 #[cfg(test)]
 impl TokenData {
 	fn new(dna: ByteVector) -> Self {
-		TokenData {
-			dna,
-		}
+		TokenData { dna }
 	}
 }
 
@@ -98,7 +91,8 @@ pub mod pallet {
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config
+	pub trait Config:
+		frame_system::Config
 		+ orml_nft::Config<TokenData = TokenData, ClassData = ClassData>
 		+ CreateSignedTransaction<Call<Self>>
 	{
@@ -133,20 +127,30 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T:Config> Pallet<T> {
+	impl<T: Config> Pallet<T> {
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2))]
-		pub fn create_nft_class(origin: OriginFor<T>, metadata: ByteVector) -> DispatchResultWithPostInfo {
+		pub fn create_nft_class(
+			origin: OriginFor<T>,
+			metadata: ByteVector,
+		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
-			let class_data = ClassData{}; // TODO: To be expanded
-			let class_id = OrmlNft::<T>::create_class(&account_id, metadata.clone(), class_data.clone())?;
+			let class_data = ClassData {}; // TODO: To be expanded
+			let class_id =
+				OrmlNft::<T>::create_class(&account_id, metadata.clone(), class_data.clone())?;
 
-			Self::deposit_event(Event::NftClassCreated(account_id, class_id, class_data, metadata));
+			Self::deposit_event(Event::NftClassCreated(
+				account_id, class_id, class_data, metadata,
+			));
 			Ok(().into())
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1))]
-		pub fn nft_request(origin: OriginFor<T>, class_id: T::ClassId, token_data: TokenData) -> DispatchResultWithPostInfo {
+		pub fn nft_request(
+			origin: OriginFor<T>,
+			class_id: T::ClassId,
+			token_data: TokenData,
+		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
 			let pending_nft = PendingNft {
@@ -164,7 +168,11 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
-		pub fn cancel_nft_request(origin: OriginFor<T>, pending_nft: PendingNftOf<T>, reason: ByteVector) -> DispatchResultWithPostInfo {
+		pub fn cancel_nft_request(
+			origin: OriginFor<T>,
+			pending_nft: PendingNftOf<T>,
+			reason: ByteVector,
+		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
@@ -175,7 +183,11 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
-		pub fn mint_nft(origin: OriginFor<T>, metadata: ByteVector, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
+		pub fn mint_nft(
+			origin: OriginFor<T>,
+			metadata: ByteVector,
+			pending_nft: PendingNftOf<T>,
+		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
@@ -192,7 +204,7 @@ pub mod pallet {
 				debug::error!("--- Nft minting error: {:?}", error);
 				Self::deposit_event(Event::NftError(error));
 
-				return Err(error.into())
+				return Err(error.into());
 			}
 
 			debug::info!("--- Nft minted: {:?}", pending_nft);
@@ -202,7 +214,7 @@ pub mod pallet {
 		}
 	}
 
-	impl<T:Config> Pallet<T> {
+	impl<T: Config> Pallet<T> {
 		fn remove_nft_from_pending_queue(pending_nft: PendingNftOf<T>) -> DispatchResult {
 			let mut nft_pending_queue = NftPendingQueue::<T>::get();
 
@@ -213,8 +225,8 @@ pub mod pallet {
 					debug::info!("--- Removed nft from pending_queue: {:?}", pending_nft);
 
 					Ok(())
-				},
-				Err(_) => Err(Error::<T>::TryToRemoveNftWhichDoesNotExist.into())
+				}
+				Err(_) => Err(Error::<T>::TryToRemoveNftWhichDoesNotExist.into()),
 			}
 		}
 	}
@@ -229,17 +241,24 @@ pub mod pallet {
 		}
 	}
 
-	impl<T:Config> Pallet<T> {
+	impl<T: Config> Pallet<T> {
 		fn execute_nft_from_pending_queue(pending_nft: PendingNftOf<T>) {
 			debug::RuntimeLogger::init();
 			debug::info!("--- Execute nft from pending queue: {:?}", pending_nft);
 
-			let mut tokens_iterator = <orml_nft::Tokens<T> as IterableStorageDoubleMap<T::ClassId, T::TokenId, orml_nft::TokenInfoOf<T>>>
-				::iter_prefix(pending_nft.class_id);
+			let mut tokens_iterator = <orml_nft::Tokens<T> as IterableStorageDoubleMap<
+				T::ClassId,
+				T::TokenId,
+				orml_nft::TokenInfoOf<T>,
+			>>::iter_prefix(pending_nft.class_id);
 
 			let mut unique_dna = true;
 			while let Some((token_id, token_info)) = tokens_iterator.next() {
-				debug::info!("--- Token to compare uniqueness: token_id: {:?}, token_info: {:?}", token_id, token_info);
+				debug::info!(
+					"--- Token to compare uniqueness: token_id: {:?}, token_info: {:?}",
+					token_id,
+					token_info
+				);
 
 				if pending_nft.token_data.dna == token_info.data.dna {
 					unique_dna = false;
@@ -250,31 +269,43 @@ pub mod pallet {
 			if !unique_dna {
 				debug::info!("--- Not a unique dna: {:?}", pending_nft.token_data.dna);
 
-				let cancel_nft_closure = |_: &_| return Call::cancel_nft_request(pending_nft.clone(), b"DNA is not unique".to_vec());
+				let cancel_nft_closure = |_: &_| {
+					return Call::cancel_nft_request(
+						pending_nft.clone(),
+						b"DNA is not unique".to_vec(),
+					);
+				};
 				let _result = Self::send_signed(cancel_nft_closure);
-				return
+				return;
 			}
 
 			// TODO: Replace metadata with IPFS CID
 			let metadata = Vec::new();
 
-			let mint_nft_closure = |_: &_| return Call::mint_nft(metadata.clone(), pending_nft.clone());
+			let mint_nft_closure =
+				|_: &_| return Call::mint_nft(metadata.clone(), pending_nft.clone());
 			let _result = Self::send_signed(mint_nft_closure);
 		}
 
-		fn send_signed(call_closure: impl Fn(&offchain::Account<T>) -> Call<T>) -> Result<(), Error<T>> {
+		fn send_signed(
+			call_closure: impl Fn(&offchain::Account<T>) -> Call<T>,
+		) -> Result<(), Error<T>> {
 			let signer = Signer::<T, T::AuthorityId>::any_account();
 			let result = signer.send_signed_transaction(call_closure);
 
 			if let Some((acc, res)) = result {
 				if res.is_err() {
-					debug::error!("--- Send signed - Error: {:?}, account id: {:?}", res, acc.id);
-					return Err(Error::<T>::OffchainSignedTxError)
+					debug::error!(
+						"--- Send signed - Error: {:?}, account id: {:?}",
+						res,
+						acc.id
+					);
+					return Err(Error::<T>::OffchainSignedTxError);
 				}
 
 				debug::info!("--- Send signed - Ok");
 				return Ok(());
-			} 
+			}
 
 			debug::error!("--- Send signed - No local account available");
 			return Err(Error::<T>::NoLocalAccountForSigning);
