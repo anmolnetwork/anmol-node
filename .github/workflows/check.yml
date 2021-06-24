@@ -34,6 +34,12 @@ jobs:
           rustup update stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
+      - name: Lint Code
+        run: |
+          rustfmt pallets/nft/src/lib.rs  --check
+          rustfmt pallets/kitties/src/lib.rs  --check
+          rustfmt runtime/src/lib.rs --check
+
       - name: Check Build
         run: |
           SKIP_WASM_BUILD=1 cargo check --release
