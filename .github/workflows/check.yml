@@ -34,6 +34,11 @@ jobs:
           rustup update stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
+      # Check formatting of project according to .rustfmt.toml rules
+      - name: Lint Code
+        run: |
+          cargo fmt -- --check
+
       - name: Check Build
         run: |
           SKIP_WASM_BUILD=1 cargo check --release

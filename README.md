@@ -58,6 +58,10 @@ The provided `cargo run` command will launch a temporary node and its state will
 you terminate the process. After the project has been built, there are other ways to launch the
 node.
 
+## Format code style
+
+The project relies on [rustfmt](https://github.com/rust-lang/rustfmt) for automatic code formatting. To keep the formatting in the project consistent for changes, run `cargo fmt` before making commits.
+
 ### Single-Node Development Chain
 
 This command will start the single-node development chain with persistent state:
