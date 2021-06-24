@@ -37,11 +37,7 @@ jobs:
       # Check formatting of project according to .rustfmt.toml rules
       - name: Lint Code
         run: |
-          rustfmt \
-          node/src/lib.rs \
-          pallets/nft/src/lib.rs \
-          pallets/kitties/src/lib.rs \
-          runtime/src/lib.rs --check
+          cargo fmt -- --check
 
       - name: Check Build
         run: |
