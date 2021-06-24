@@ -34,11 +34,11 @@ jobs:
           rustup update stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
-      # Check formatting of node and runtime according to .rustfmt.toml rules
+      # Check formatting of project according to .rustfmt.toml rules
       - name: Lint Code
         run: |
           rustfmt \
-          node/src/lib.rs
+          node/src/lib.rs \
           pallets/nft/src/lib.rs \
           pallets/kitties/src/lib.rs \
           runtime/src/lib.rs --check
