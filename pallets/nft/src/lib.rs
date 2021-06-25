@@ -102,6 +102,7 @@ pub mod pallet {
 		OffchainLock,
 		OffchainValueNotFound,
 		OffchainValueDecode,
+		OffchainLocalNftMetadataAlreadyExist,
 		IncorrectNftKeyHash,
 		RemoveVectorItem,
 	}
@@ -193,13 +194,13 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(block_number: T::BlockNumber) {
 			let key = offchain::offchain_new_nft_requests_key();
-			let pending_nft_queue = PendingNftQueue::<T>::get();
 
-			sp_io::offchain_index::set(&key.0, &pending_nft_queue.encode());
-			
-			debug::info!("--- on_finalize block_number: {:?}, new_nft_requests_key: {:x}, new_nft_requests_value: {:?}", block_number, key, pending_nft_queue);
-			
-			PendingNftQueue::<T>::put(PendingNftQueueOf::<T>::new());
+			PendingNftQueue::<T>::mutate(|pending_nft_queue| {
+				sp_io::offchain_index::set(&key.0, &pending_nft_queue.encode());
+				debug::info!("--- on_finalize block_number: {:?}, new_nft_requests_key: {:x}, new_nft_requests_value: {:?}", block_number, key, pending_nft_queue);
+
+				*pending_nft_queue = PendingNftQueueOf::<T>::new();
+			});
 		}
 
 		fn offchain_worker(block_number: T::BlockNumber) {

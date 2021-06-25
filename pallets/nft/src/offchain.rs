@@ -65,13 +65,14 @@ pub fn hook_init<T: Config>(block_number: T::BlockNumber) {
     match result {
         Ok(_) => {
             if let Ok(queue) = pending_nft_queue.get::<T>() {
-                if queue.len() > 0 {
+                for pending_nft in queue.clone() {
                     debug::info!("--- Pending nft queue key: {:x}, value: {:?}", VecKey(NFT_PENDING_QUEUE.to_vec()), queue);
-
-                    let pending_nft = &queue[0];
-                    execute_nft_from_pending_queue::<T>(pending_nft.clone());
-
-                    let _: Result<_, Error<T>> = pending_nft_queue.mutate(|x| remove_vector_item(x, pending_nft));
+                    match execute_nft_from_pending_queue::<T>(pending_nft.clone()) {
+                        Ok(()) => {
+                            let _: Result<_, Error<T>> = pending_nft_queue.mutate(|x| remove_vector_item(x, &pending_nft));
+                        },
+                        Err(e) => debug::error!("--- Error: execute_nft_from_pending_queue {:?}", e)
+                    }
                 }
             }
         },
@@ -101,7 +102,7 @@ fn offchain_update_pending_nft_queue<T: Config>
     })
 }
 
-fn execute_nft_from_pending_queue<T: Config>(pending_nft: PendingNftOf<T>) {
+fn execute_nft_from_pending_queue<T: Config>(pending_nft: PendingNftOf<T>) -> Result<(), Error<T>> {
     debug::RuntimeLogger::init();
     debug::info!("--- Execute nft from pending queue: {:?}", pending_nft);
 
@@ -110,17 +111,21 @@ fn execute_nft_from_pending_queue<T: Config>(pending_nft: PendingNftOf<T>) {
 
     if let Ok(value) = local_nft_metadata.get::<T>() {
         debug::error!("--- Error: local_nft_metadata already exist: {:?}", value);
-        return
+        return Err(Error::<T>::OffchainLocalNftMetadataAlreadyExist)
     }
 
     let mint_nft_closure = |_: &frame_system::offchain::Account<T>| return Call::mint_nft(key_hash, pending_nft.clone());
-    if let Ok(()) = send_signed(mint_nft_closure) {
-        let metadata = LocalNftMetadata {
-            mould_id: pending_nft.class_id,
-            dna: pending_nft.token_data.dna,
-        };
-
-        local_nft_metadata.set(&metadata);
+    match send_signed(mint_nft_closure) {
+        Ok(()) => {
+            let metadata = LocalNftMetadata {
+                mould_id: pending_nft.class_id,
+                dna: pending_nft.token_data.dna,
+            };
+    
+            local_nft_metadata.set(&metadata);
+            Ok(())
+        },
+        Err(e) => Err(e)
     }
 }
 
@@ -136,7 +141,7 @@ fn send_signed<T: Config>(call_closure: impl Fn(&frame_system::offchain::Account
 
         debug::info!("--- Send signed - Ok");
         return Ok(());
-    } 
+    }
 
     debug::error!("--- Send signed - No local account available");
     return Err(Error::<T>::NoLocalAccountForSigning);
