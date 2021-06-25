@@ -24,12 +24,6 @@ fn mint_nft_works() {
 			pending_nft.clone().token_data
 		));
 
-		// TODO: DispatchError for ClassNotFound
-		// assert_noop!(
-		//     Nft::mint_nft(Origin::signed(ALICE), vec![0], pending_nft.clone()),
-		//     crate::Error::<Runtime>::NftError(base_nft::Error::<Runtime>::ClassNotFound)
-		// );
-
 		assert_ok!(Nft::create_nft_class(Origin::signed(ALICE), vec![1]));
 
 		let event = Event::pallet_nft(crate::Event::NftClassCreated(
