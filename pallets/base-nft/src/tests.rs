@@ -39,7 +39,12 @@ fn mint_should_work() {
 		let next_class_id = NonFungibleTokenModule::next_class_id();
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
 		assert_eq!(NonFungibleTokenModule::next_token_id(next_class_id), 0);
-		assert_ok!(NonFungibleTokenModule::mint(&BOB, next_class_id, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(
+			&BOB,
+			next_class_id,
+			vec![1],
+			()
+		));
 		assert_eq!(NonFungibleTokenModule::next_token_id(next_class_id), 1);
 
 		assert_eq!(NonFungibleTokenModule::next_token_id(CLASS_ID), 2);
@@ -58,7 +63,9 @@ fn mint_should_fail() {
 			Error::<Runtime>::NumOverflow
 		);
 
-		NextTokenId::<Runtime>::mutate(CLASS_ID, |id| *id = <Runtime as Config>::TokenId::max_value());
+		NextTokenId::<Runtime>::mutate(CLASS_ID, |id| {
+			*id = <Runtime as Config>::TokenId::max_value()
+		});
 		assert_noop!(
 			NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()),
 			Error::<Runtime>::NoAvailableTokenId
@@ -71,9 +78,21 @@ fn transfer_should_work() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
 		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &BOB, (CLASS_ID, TOKEN_ID)));
-		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID)));
-		assert_ok!(NonFungibleTokenModule::transfer(&ALICE, &BOB, (CLASS_ID, TOKEN_ID)));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&BOB,
+			(CLASS_ID, TOKEN_ID)
+		));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&ALICE,
+			(CLASS_ID, TOKEN_ID)
+		));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&ALICE,
+			&BOB,
+			(CLASS_ID, TOKEN_ID)
+		));
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
 	});
 }

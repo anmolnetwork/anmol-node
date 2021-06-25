@@ -46,10 +46,10 @@ use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendTransactionTypes, SigningTypes,
 };
 
+pub use base_nft;
 /// Import the kitties pallet.
 pub use pallet_kitties;
 pub use pallet_nft;
-pub use base_nft;
 
 /// An index to a block.
 pub type BlockNumber = u32;

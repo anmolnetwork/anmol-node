@@ -24,7 +24,9 @@
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::*, Parameter};
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, MaybeSerializeDeserialize, Member, One, Zero},
+	traits::{
+		AtLeast32BitUnsigned, CheckedAdd, CheckedSub, MaybeSerializeDeserialize, Member, One, Zero,
+	},
 	DispatchError, DispatchResult, RuntimeDebug,
 };
 use sp_std::vec::Vec;
@@ -74,9 +76,13 @@ pub mod module {
 		type TokenData: Parameter + Member + MaybeSerializeDeserialize;
 	}
 
-	pub type ClassInfoOf<T> =
-		ClassInfo<<T as Config>::TokenId, <T as frame_system::Config>::AccountId, <T as Config>::ClassData>;
-	pub type TokenInfoOf<T> = TokenInfo<<T as frame_system::Config>::AccountId, <T as Config>::TokenData>;
+	pub type ClassInfoOf<T> = ClassInfo<
+		<T as Config>::TokenId,
+		<T as frame_system::Config>::AccountId,
+		<T as Config>::ClassData,
+	>;
+	pub type TokenInfoOf<T> =
+		TokenInfo<<T as frame_system::Config>::AccountId, <T as Config>::TokenData>;
 
 	pub type GenesisTokenData<T> = (
 		<T as frame_system::Config>::AccountId, // Token owner
@@ -118,7 +124,8 @@ pub mod module {
 	/// Next available token ID.
 	#[pallet::storage]
 	#[pallet::getter(fn next_token_id)]
-	pub type NextTokenId<T: Config> = StorageMap<_, Twox64Concat, T::ClassId, T::TokenId, ValueQuery>;
+	pub type NextTokenId<T: Config> =
+		StorageMap<_, Twox64Concat, T::ClassId, T::TokenId, ValueQuery>;
 
 	/// Store class info.
 	///
@@ -141,8 +148,15 @@ pub mod module {
 	// #[cfg(not(feature = "disable-tokens-by-owner"))]
 	#[pallet::storage]
 	#[pallet::getter(fn tokens_by_owner)]
-	pub type TokensByOwner<T: Config> =
-		StorageDoubleMap<_, Twox64Concat, T::AccountId, Twox64Concat, (T::ClassId, T::TokenId), (), ValueQuery>;
+	pub type TokensByOwner<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		T::AccountId,
+		Twox64Concat,
+		(T::ClassId, T::TokenId),
+		(),
+		ValueQuery,
+	>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -160,11 +174,20 @@ pub mod module {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			self.tokens.iter().for_each(|token_class| {
-				let class_id = Pallet::<T>::create_class(&token_class.0, token_class.1.to_vec(), token_class.2.clone())
-					.expect("Create class cannot fail while building genesis");
+				let class_id = Pallet::<T>::create_class(
+					&token_class.0,
+					token_class.1.to_vec(),
+					token_class.2.clone(),
+				)
+				.expect("Create class cannot fail while building genesis");
 				for (account_id, token_metadata, token_data) in &token_class.3 {
-					Pallet::<T>::mint(&account_id, class_id, token_metadata.to_vec(), token_data.clone())
-						.expect("Token mint cannot fail during genesis");
+					Pallet::<T>::mint(
+						&account_id,
+						class_id,
+						token_metadata.to_vec(),
+						token_data.clone(),
+					)
+					.expect("Token mint cannot fail during genesis");
 				}
 			})
 		}
@@ -189,7 +212,9 @@ impl<T: Config> Pallet<T> {
 	) -> Result<T::ClassId, DispatchError> {
 		let class_id = NextClassId::<T>::try_mutate(|id| -> Result<T::ClassId, DispatchError> {
 			let current_id = *id;
-			*id = id.checked_add(&One::one()).ok_or(Error::<T>::NoAvailableClassId)?;
+			*id = id
+				.checked_add(&One::one())
+				.ok_or(Error::<T>::NoAvailableClassId)?;
 			Ok(current_id)
 		})?;
 
@@ -205,7 +230,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Transfer NFT(non fungible token) from `from` account to `to` account
-	pub fn transfer(from: &T::AccountId, to: &T::AccountId, token: (T::ClassId, T::TokenId)) -> DispatchResult {
+	pub fn transfer(
+		from: &T::AccountId,
+		to: &T::AccountId,
+		token: (T::ClassId, T::TokenId),
+	) -> DispatchResult {
 		Tokens::<T>::try_mutate(token.0, token.1, |token_info| -> DispatchResult {
 			let mut info = token_info.as_mut().ok_or(Error::<T>::TokenNotFound)?;
 			ensure!(info.owner == *from, Error::<T>::NoPermission);
@@ -235,7 +264,9 @@ impl<T: Config> Pallet<T> {
 	) -> Result<T::TokenId, DispatchError> {
 		NextTokenId::<T>::try_mutate(class_id, |id| -> Result<T::TokenId, DispatchError> {
 			let token_id = *id;
-			*id = id.checked_add(&One::one()).ok_or(Error::<T>::NoAvailableTokenId)?;
+			*id = id
+				.checked_add(&One::one())
+				.ok_or(Error::<T>::NoAvailableTokenId)?;
 
 			Classes::<T>::try_mutate(class_id, |class_info| -> DispatchResult {
 				let info = class_info.as_mut().ok_or(Error::<T>::ClassNotFound)?;
@@ -286,7 +317,10 @@ impl<T: Config> Pallet<T> {
 		Classes::<T>::try_mutate_exists(class_id, |class_info| -> DispatchResult {
 			let info = class_info.take().ok_or(Error::<T>::ClassNotFound)?;
 			ensure!(info.owner == *owner, Error::<T>::NoPermission);
-			ensure!(info.total_issuance == Zero::zero(), Error::<T>::CannotDestroyClass);
+			ensure!(
+				info.total_issuance == Zero::zero(),
+				Error::<T>::CannotDestroyClass
+			);
 
 			NextTokenId::<T>::remove(class_id);
 

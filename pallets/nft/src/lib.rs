@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use base_nft::Module as BaseNft;
 use frame_support::{
 	dispatch::{DispatchResult, DispatchResultWithPostInfo},
 	pallet_prelude::*,
@@ -9,8 +10,6 @@ use frame_system::{
 	offchain::{self, AppCrypto, CreateSignedTransaction, SendSignedTransaction, Signer},
 	pallet_prelude::*,
 };
-
-use base_nft::Module as BaseNft;
 pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -64,13 +63,11 @@ where
 	}
 }
 
-pub type PendingNftOf<T> = PendingNft<<T as frame_system::Config>::AccountId, <T as base_nft::Config>::ClassId>;
 pub type PendingNftOf<T> =
 	PendingNft<<T as frame_system::Config>::AccountId, <T as base_nft::Config>::ClassId>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Encode, Decode, Clone, PartialEq
-	, Eq, RuntimeDebug, Default)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
 pub struct ClassData {
 	// To be expanded
 }
