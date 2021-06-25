@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use base_nft::Module as BaseNft;
 use frame_support::{
 	dispatch::{DispatchResult, DispatchResultWithPostInfo},
 	pallet_prelude::*,
@@ -9,7 +10,6 @@ use frame_system::{
 	offchain::{self, AppCrypto, CreateSignedTransaction, SendSignedTransaction, Signer},
 	pallet_prelude::*,
 };
-use orml_nft::Module as OrmlNft;
 pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -64,7 +64,7 @@ where
 }
 
 pub type PendingNftOf<T> =
-	PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
+	PendingNft<<T as frame_system::Config>::AccountId, <T as base_nft::Config>::ClassId>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
@@ -93,7 +93,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
-		+ orml_nft::Config<TokenData = TokenData, ClassData = ClassData>
+		+ base_nft::Config<TokenData = TokenData, ClassData = ClassData>
 		+ CreateSignedTransaction<Call<Self>>
 	{
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
@@ -137,7 +137,7 @@ pub mod pallet {
 
 			let class_data = ClassData {}; // TODO: To be expanded
 			let class_id =
-				OrmlNft::<T>::create_class(&account_id, metadata.clone(), class_data.clone())?;
+				BaseNft::<T>::create_class(&account_id, metadata.clone(), class_data.clone())?;
 
 			Self::deposit_event(Event::NftClassCreated(
 				account_id, class_id, class_data, metadata,
@@ -193,7 +193,7 @@ pub mod pallet {
 
 			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
 
-			let minting_result = OrmlNft::<T>::mint(
+			let minting_result = BaseNft::<T>::mint(
 				&pending_nft.account_id,
 				pending_nft.class_id.clone(),
 				metadata.clone(),
@@ -246,10 +246,10 @@ pub mod pallet {
 			debug::RuntimeLogger::init();
 			debug::info!("--- Execute nft from pending queue: {:?}", pending_nft);
 
-			let mut tokens_iterator = <orml_nft::Tokens<T> as IterableStorageDoubleMap<
+			let mut tokens_iterator = <base_nft::Tokens<T> as IterableStorageDoubleMap<
 				T::ClassId,
 				T::TokenId,
-				orml_nft::TokenInfoOf<T>,
+				base_nft::TokenInfoOf<T>,
 			>>::iter_prefix(pending_nft.class_id);
 
 			let mut unique_dna = true;

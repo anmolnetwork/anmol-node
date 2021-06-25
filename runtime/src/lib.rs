@@ -46,7 +46,7 @@ use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendTransactionTypes, SigningTypes,
 };
 
-pub use orml_nft;
+pub use base_nft;
 /// Import the kitties pallet.
 pub use pallet_kitties;
 pub use pallet_nft;
@@ -284,7 +284,7 @@ impl pallet_nft::Config for Runtime {
 	type Event = Event;
 }
 
-impl orml_nft::Config for Runtime {
+impl base_nft::Config for Runtime {
 	type ClassId = u32;
 	type TokenId = u32;
 	type ClassData = pallet_nft::ClassData;
@@ -366,7 +366,7 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 		KittiesModule: pallet_kitties::{Module, Call, Storage, Event<T>},
 		NftModule: pallet_nft::{Module, Call, Storage, Event<T>},
-		OrmlNft: orml_nft::{Module, Storage},
+		BaseNft: base_nft::{Module, Storage},
 	}
 );
 

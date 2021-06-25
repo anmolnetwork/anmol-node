@@ -22,7 +22,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Module, Call, Config, Storage, Event<T>},
 		Nft: pallet_nft::{Module, Call, Storage, Event<T>},
-		OrmlNft: orml_nft::{Module, Storage},
+		BaseNft: base_nft::{Module, Storage},
 	}
 );
 
@@ -64,7 +64,7 @@ impl pallet_nft::Config for Runtime {
 	type Event = Event;
 }
 
-impl orml_nft::Config for Runtime {
+impl base_nft::Config for Runtime {
 	type ClassId = u32;
 	type TokenId = u32;
 	type ClassData = pallet_nft::ClassData;

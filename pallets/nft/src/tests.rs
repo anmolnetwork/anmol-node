@@ -2,7 +2,7 @@ use crate::mock::{Event, *};
 use frame_support::{assert_noop, assert_ok};
 
 const ALICE: AccountId = AccountId::new([1u8; 32]);
-const CLASS_ID: <Runtime as orml_nft::Config>::ClassId = 0;
+const CLASS_ID: <Runtime as base_nft::Config>::ClassId = 0;
 
 #[test]
 fn mint_nft_works() {
@@ -23,12 +23,6 @@ fn mint_nft_works() {
 			CLASS_ID,
 			pending_nft.clone().token_data
 		));
-
-		// TODO: DispatchError for ClassNotFound
-		// assert_noop!(
-		//     Nft::mint_nft(Origin::signed(ALICE), vec![0], pending_nft.clone()),
-		//     crate::Error::<Runtime>::NftError(orml_nft::Error::<Runtime>::ClassNotFound)
-		// );
 
 		assert_ok!(Nft::create_nft_class(Origin::signed(ALICE), vec![1]));
 
