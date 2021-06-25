@@ -1,6 +1,6 @@
 [package]
-name = "anmol-nft"
-description = "NFT pallet for extended functionality"
+name = "base-nft"
+description = "A pallet to extend for building advanced NFT functions"
 repository = "https://github.com/open-web3-stack/open-runtime-module-library/tree/master/nft"
 license = "Apache-2.0"
 version = "0.1.0"

@@ -19,7 +19,7 @@ use sp_core::{
 	crypto::KeyTypeId,
 };
 use sp_runtime::{DispatchError};
-use anmol_nft::Module as AnmolNft;
+use base_nft::Module as BaseNft;
 
 #[cfg(test)]
 mod mock;
@@ -69,7 +69,7 @@ where
     }
 }
 
-pub type PendingNftOf<T> = PendingNft<<T as frame_system::Config>::AccountId, <T as anmol_nft::Config>::ClassId>;
+pub type PendingNftOf<T> = PendingNft<<T as frame_system::Config>::AccountId, <T as base_nft::Config>::ClassId>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq
@@ -100,7 +100,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config
-		+ anmol_nft::Config<TokenData = TokenData, ClassData = ClassData>
+		+ base_nft::Config<TokenData = TokenData, ClassData = ClassData>
 		+ CreateSignedTransaction<Call<Self>>
 	{
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
@@ -140,7 +140,7 @@ pub mod pallet {
 			let account_id = ensure_signed(origin)?;
 
 			let class_data = ClassData{}; // TODO: To be expanded
-			let class_id = AnmolNft::<T>::create_class(&account_id, metadata.clone(), class_data.clone())?;
+			let class_id = BaseNft::<T>::create_class(&account_id, metadata.clone(), class_data.clone())?;
 
 			Self::deposit_event(Event::NftClassCreated(account_id, class_id, class_data, metadata));
 			Ok(().into())
@@ -182,7 +182,7 @@ pub mod pallet {
 
 			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
 
-			let minting_result = AnmolNft::<T>::mint(
+			let minting_result = BaseNft::<T>::mint(
 				&pending_nft.account_id,
 				pending_nft.class_id.clone(),
 				metadata.clone(),
@@ -235,7 +235,7 @@ pub mod pallet {
 			debug::RuntimeLogger::init();
 			debug::info!("--- Execute nft from pending queue: {:?}", pending_nft);
 
-			let mut tokens_iterator = <anmol_nft::Tokens<T> as IterableStorageDoubleMap<T::ClassId, T::TokenId, anmol_nft::TokenInfoOf<T>>>
+			let mut tokens_iterator = <base_nft::Tokens<T> as IterableStorageDoubleMap<T::ClassId, T::TokenId, base_nft::TokenInfoOf<T>>>
 				::iter_prefix(pending_nft.class_id);
 
 			let mut unique_dna = true;

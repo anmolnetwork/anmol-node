@@ -135,25 +135,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "anmol-nft"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "funty",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "anmol-runtime"
 version = "0.1.0"
 dependencies = [
- "anmol-nft",
+ "base-nft",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -470,6 +455,21 @@ dependencies = [
  "miniz_oxide",
  "object 0.23.0",
  "rustc-demangle",
+]
+
+[[package]]
+name = "base-nft"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "funty",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -3835,7 +3835,7 @@ dependencies = [
 name = "pallet-nft"
 version = "0.1.0"
 dependencies = [
- "anmol-nft",
+ "base-nft",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
