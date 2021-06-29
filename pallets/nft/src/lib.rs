@@ -1,8 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-	dispatch::{DispatchResultWithPostInfo}, pallet_prelude::*,
-};
+use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::{
 	offchain::{AppCrypto, CreateSignedTransaction},
 	pallet_prelude::*,
@@ -22,8 +20,8 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-pub mod offchain;
 pub mod local_storage;
+pub mod offchain;
 pub mod utils;
 
 pub type ByteVector = Vec<u8>;
@@ -45,7 +43,8 @@ where
 	}
 }
 
-type PendingNftOf<T> = PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
+type PendingNftOf<T> =
+	PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
 pub type PendingNftQueueOf<T> = Vec<PendingNftOf<T>>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -168,13 +167,21 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
-		pub fn mint_nft(origin: OriginFor<T>, key_hash: local_storage::KeyHash, pending_nft: PendingNftOf<T>) -> DispatchResultWithPostInfo {
+		pub fn mint_nft(
+			origin: OriginFor<T>,
+			key_hash: local_storage::KeyHash,
+			pending_nft: PendingNftOf<T>,
+		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
-			if key_hash != local_storage::get_nft_key_hash::<T>(pending_nft.class_id, pending_nft.token_data.clone()) {
+			if key_hash
+				!= local_storage::get_nft_key_hash::<T>(
+					pending_nft.class_id,
+					pending_nft.token_data.clone(),
+				) {
 				debug::error!("--- Error: IncorrectNftKeyHash");
-				return Err(Error::<T>::IncorrectNftKeyHash.into())
+				return Err(Error::<T>::IncorrectNftKeyHash.into());
 			}
 
 			let minting_result = OrmlNft::<T>::mint(
@@ -189,7 +196,7 @@ pub mod pallet {
 
 				debug::error!("--- Nft minting error: {:?}", error);
 				Self::deposit_event(Event::NftError(error));
-				return Err(error.into())
+				return Err(error.into());
 			}
 
 			debug::info!("--- Nft minted: {:?}", pending_nft);
