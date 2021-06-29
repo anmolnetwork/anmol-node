@@ -59,13 +59,12 @@ pub fn hook_init<T: Config>(block_number: T::BlockNumber) {
 						VecKey(NFT_PENDING_QUEUE.to_vec()),
 						queue
 					);
+
 					match execute_nft_from_pending_queue::<T>(pending_nft.clone()) {
-						Ok(()) => {
+						Err(e) if e == Error::NoLocalAccountForSigning => (),
+						_ => {
 							let _: Result<_, Error<T>> =
 								pending_nft_queue.mutate(|x| remove_vector_item(x, &pending_nft));
-						}
-						Err(e) => {
-							debug::error!("--- Error: execute_nft_from_pending_queue {:?}", e)
 						}
 					}
 				}

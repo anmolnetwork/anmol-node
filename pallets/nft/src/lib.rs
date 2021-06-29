@@ -90,6 +90,7 @@ pub mod pallet {
 	pub(super) type PendingNftQueue<T: Config> = StorageValue<_, PendingNftQueueOf<T>, ValueQuery>;
 
 	#[pallet::error]
+	#[derive(PartialEq)]
 	pub enum Error<T> {
 		NoLocalAccountForSigning,
 		OffchainSignedTxError,
@@ -150,19 +151,6 @@ pub mod pallet {
 			});
 
 			Self::deposit_event(Event::NftRequest(pending_nft));
-			Ok(().into())
-		}
-
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
-		pub fn cancel_nft_request(
-			origin: OriginFor<T>,
-			pending_nft: PendingNftOf<T>,
-			reason: ByteVector,
-		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
-			// TODO: Check if account_id is signed by off-chain worker
-
-			Self::deposit_event(Event::CancelNftRequest(reason, pending_nft));
 			Ok(().into())
 		}
 

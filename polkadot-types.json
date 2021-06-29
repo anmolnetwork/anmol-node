@@ -25,5 +25,7 @@
         "class_id": "ClassId",
         "token_data": "TokenData"
     },
-    "PendingNftOf": "PendingNft"
+    "PendingNftOf": "PendingNft",
+    "PendingNftQueueOf": "Vec<PendingNftOf>",
+    "KeyHash": "[u8; 16]"
 }
