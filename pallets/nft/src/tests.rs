@@ -22,13 +22,13 @@ fn mint_nft_works() {
 
         assert_ok!(Nft::nft_request(Origin::signed(ALICE), CLASS_ID, pending_nft.clone().token_data));
 
-        // TODO: DispatchError for ClassNotFound
-        // assert_noop!(
-        //     Nft::mint_nft(Origin::signed(ALICE), vec![0], pending_nft.clone()),
-        //     crate::Error::<Runtime>::NftError(orml_nft::Error::<Runtime>::ClassNotFound)
-        // );
+		// TODO: DispatchError for ClassNotFound
+		// assert_noop!(
+		//     Nft::mint_nft(Origin::signed(ALICE), vec![0], pending_nft.clone()),
+		//     crate::Error::<Runtime>::NftError(orml_nft::Error::<Runtime>::ClassNotFound)
+		// );
 
-        assert_ok!(Nft::create_nft_class(Origin::signed(ALICE), vec![1]));
+		assert_ok!(Nft::create_nft_class(Origin::signed(ALICE), vec![1]));
 
         let event = Event::pallet_nft(
             crate::Event::NftClassCreated(
@@ -65,7 +65,11 @@ fn nft_request_works() {
 
         let token_data = TokenData::new(vec![0, 0, 1]);
 
-        assert_ok!(Nft::nft_request(Origin::signed(ALICE), CLASS_ID, token_data.clone()));
+		assert_ok!(Nft::nft_request(
+			Origin::signed(ALICE),
+			CLASS_ID,
+			token_data.clone()
+		));
 
         let pending_nft = PendingNft {
             account_id: ALICE,
@@ -73,12 +77,8 @@ fn nft_request_works() {
             token_data,
         };
 
-        let event = Event::pallet_nft(
-            crate::Event::NftRequest(
-                pending_nft.clone(),
-            )
-        );
-        assert_eq!(last_event(), event);
+		let event = Event::pallet_nft(crate::Event::NftRequest(pending_nft.clone()));
+		assert_eq!(last_event(), event);
 
         assert_eq!(PendingNftQueue::<Runtime>::get(), vec![pending_nft]);
     });

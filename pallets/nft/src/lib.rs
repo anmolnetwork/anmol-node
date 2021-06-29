@@ -1,24 +1,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use pallet::*;
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo}, pallet_prelude::*,
 };
 use frame_system::{
+	offchain::{AppCrypto, CreateSignedTransaction},
 	pallet_prelude::*,
-	offchain::{CreateSignedTransaction, AppCrypto},
 };
-#[cfg(feature = "std")]
-use serde::{Serialize, Deserialize};
-use sp_std::{
-	vec::Vec,
-	cmp::{Ordering},
-	str,
-};
-use sp_runtime::{
-	DispatchError,
-};
+
 use orml_nft::Module as OrmlNft;
+pub use pallet::*;
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+use sp_runtime::DispatchError;
+use sp_std::{cmp::Ordering, vec::Vec};
 
 #[cfg(test)]
 mod mock;
@@ -45,8 +41,8 @@ where
 	ClassId: Ord,
 {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
+		Some(self.cmp(other))
+	}
 }
 
 type PendingNftOf<T> = PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
@@ -68,9 +64,7 @@ pub struct TokenData {
 #[cfg(test)]
 impl TokenData {
 	fn new(dna: ByteVector) -> Self {
-		TokenData {
-			dna,
-		}
+		TokenData { dna }
 	}
 }
 
@@ -79,7 +73,8 @@ pub mod pallet {
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config
+	pub trait Config:
+		frame_system::Config
 		+ orml_nft::Config<TokenData = TokenData, ClassData = ClassData>
 		+ CreateSignedTransaction<Call<Self>>
 	{
@@ -119,20 +114,30 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T:Config> Pallet<T> {
+	impl<T: Config> Pallet<T> {
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2))]
-		pub fn create_nft_class(origin: OriginFor<T>, metadata: ByteVector) -> DispatchResultWithPostInfo {
+		pub fn create_nft_class(
+			origin: OriginFor<T>,
+			metadata: ByteVector,
+		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
-			let class_data = ClassData{}; // TODO: To be expanded
-			let class_id = OrmlNft::<T>::create_class(&account_id, metadata.clone(), class_data.clone())?;
+			let class_data = ClassData {}; // TODO: To be expanded
+			let class_id =
+				OrmlNft::<T>::create_class(&account_id, metadata.clone(), class_data.clone())?;
 
-			Self::deposit_event(Event::NftClassCreated(account_id, class_id, class_data, metadata));
+			Self::deposit_event(Event::NftClassCreated(
+				account_id, class_id, class_data, metadata,
+			));
 			Ok(().into())
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1))]
-		pub fn nft_request(origin: OriginFor<T>, class_id: T::ClassId, token_data: TokenData) -> DispatchResultWithPostInfo {
+		pub fn nft_request(
+			origin: OriginFor<T>,
+			class_id: T::ClassId,
+			token_data: TokenData,
+		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
 			let pending_nft = PendingNft {
@@ -150,7 +155,11 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
-		pub fn cancel_nft_request(origin: OriginFor<T>, pending_nft: PendingNftOf<T>, reason: ByteVector) -> DispatchResultWithPostInfo {
+		pub fn cancel_nft_request(
+			origin: OriginFor<T>,
+			pending_nft: PendingNftOf<T>,
+			reason: ByteVector,
+		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
