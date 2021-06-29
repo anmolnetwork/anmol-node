@@ -1,19 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-	dispatch::{DispatchResult, DispatchResultWithPostInfo},
-	pallet_prelude::*,
-	storage::IterableStorageDoubleMap,
-};
+use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::{
-	offchain::{self, AppCrypto, CreateSignedTransaction, SendSignedTransaction, Signer},
+	offchain::{AppCrypto, CreateSignedTransaction},
 	pallet_prelude::*,
 };
+
 use orml_nft::Module as OrmlNft;
 pub use pallet::*;
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::crypto::KeyTypeId;
 use sp_runtime::DispatchError;
 use sp_std::{cmp::Ordering, vec::Vec};
 
@@ -23,26 +20,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"_nft");
-
-pub mod crypto {
-	use crate::KEY_TYPE;
-	use frame_system::offchain::AppCrypto;
-	use sp_runtime::{
-		app_crypto::{app_crypto, sr25519},
-		MultiSignature, MultiSigner,
-	};
-
-	app_crypto!(sr25519, KEY_TYPE);
-
-	pub struct TestAuthId;
-
-	impl AppCrypto<MultiSigner, MultiSignature> for TestAuthId {
-		type RuntimeAppPublic = Public;
-		type GenericSignature = sp_core::sr25519::Signature;
-		type GenericPublic = sp_core::sr25519::Public;
-	}
-}
+pub mod local_storage;
+pub mod offchain;
+pub mod utils;
 
 pub type ByteVector = Vec<u8>;
 
@@ -63,8 +43,9 @@ where
 	}
 }
 
-pub type PendingNftOf<T> =
+type PendingNftOf<T> =
 	PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
+pub type PendingNftQueueOf<T> = Vec<PendingNftOf<T>>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
@@ -106,13 +87,19 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub(super) type NftPendingQueue<T: Config> = StorageValue<_, Vec<PendingNftOf<T>>, ValueQuery>;
+	pub(super) type PendingNftQueue<T: Config> = StorageValue<_, PendingNftQueueOf<T>, ValueQuery>;
 
 	#[pallet::error]
+	#[derive(PartialEq)]
 	pub enum Error<T> {
 		NoLocalAccountForSigning,
 		OffchainSignedTxError,
-		TryToRemoveNftWhichDoesNotExist,
+		OffchainLock,
+		OffchainValueNotFound,
+		OffchainValueDecode,
+		OffchainLocalNftMetadataAlreadyExist,
+		IncorrectNftKeyHash,
+		RemoveVectorItem,
 	}
 
 	#[pallet::event]
@@ -122,7 +109,7 @@ pub mod pallet {
 		NftClassCreated(T::AccountId, T::ClassId, ClassData, ByteVector),
 		NftRequest(PendingNftOf<T>),
 		CancelNftRequest(ByteVector, PendingNftOf<T>),
-		NftMinted(PendingNftOf<T>, ByteVector),
+		NftMinted(PendingNftOf<T>, local_storage::KeyHash),
 		NftError(DispatchError),
 	}
 
@@ -159,7 +146,7 @@ pub mod pallet {
 				token_data,
 			};
 
-			NftPendingQueue::<T>::mutate(|pending_nft_queue| {
+			PendingNftQueue::<T>::mutate(|pending_nft_queue| {
 				pending_nft_queue.push(pending_nft.clone());
 			});
 
@@ -167,148 +154,61 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 1))]
-		pub fn cancel_nft_request(
-			origin: OriginFor<T>,
-			pending_nft: PendingNftOf<T>,
-			reason: ByteVector,
-		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
-			// TODO: Check if account_id is signed by off-chain worker
-
-			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
-
-			Self::deposit_event(Event::CancelNftRequest(reason, pending_nft));
-			Ok(().into())
-		}
-
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
 		pub fn mint_nft(
 			origin: OriginFor<T>,
-			metadata: ByteVector,
+			key_hash: local_storage::KeyHash,
 			pending_nft: PendingNftOf<T>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			// TODO: Check if account_id is signed by off-chain worker
 
-			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
+			if key_hash
+				!= local_storage::get_nft_key_hash::<T>(
+					pending_nft.class_id,
+					pending_nft.token_data.clone(),
+				) {
+				debug::error!("--- Error: IncorrectNftKeyHash");
+				return Err(Error::<T>::IncorrectNftKeyHash.into());
+			}
 
 			let minting_result = OrmlNft::<T>::mint(
 				&pending_nft.account_id,
-				pending_nft.class_id.clone(),
-				metadata.clone(),
+				pending_nft.class_id,
+				key_hash.to_vec(),
 				pending_nft.token_data.clone(),
 			);
 
 			if let Err(error) = minting_result {
+				sp_io::offchain_index::clear(&key_hash);
+
 				debug::error!("--- Nft minting error: {:?}", error);
 				Self::deposit_event(Event::NftError(error));
-
 				return Err(error.into());
 			}
 
 			debug::info!("--- Nft minted: {:?}", pending_nft);
 
-			Self::deposit_event(Event::NftMinted(pending_nft, metadata));
+			Self::deposit_event(Event::NftMinted(pending_nft, key_hash));
 			Ok(().into())
-		}
-	}
-
-	impl<T: Config> Pallet<T> {
-		fn remove_nft_from_pending_queue(pending_nft: PendingNftOf<T>) -> DispatchResult {
-			let mut nft_pending_queue = NftPendingQueue::<T>::get();
-
-			match nft_pending_queue.binary_search(&pending_nft) {
-				Ok(index) => {
-					nft_pending_queue.remove(index);
-					NftPendingQueue::<T>::put(nft_pending_queue);
-					debug::info!("--- Removed nft from pending_queue: {:?}", pending_nft);
-
-					Ok(())
-				}
-				Err(_) => Err(Error::<T>::TryToRemoveNftWhichDoesNotExist.into()),
-			}
 		}
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn offchain_worker(_block_number: T::BlockNumber) {
-			let pending_nft_queue = NftPendingQueue::<T>::get();
-			if pending_nft_queue.len() > 0 {
-				Self::execute_nft_from_pending_queue(pending_nft_queue[0].clone());
-			}
-		}
-	}
+		fn on_finalize(block_number: T::BlockNumber) {
+			let key = offchain::offchain_new_nft_requests_key();
 
-	impl<T: Config> Pallet<T> {
-		fn execute_nft_from_pending_queue(pending_nft: PendingNftOf<T>) {
-			debug::RuntimeLogger::init();
-			debug::info!("--- Execute nft from pending queue: {:?}", pending_nft);
+			PendingNftQueue::<T>::mutate(|pending_nft_queue| {
+				sp_io::offchain_index::set(&key.0, &pending_nft_queue.encode());
+				debug::info!("--- on_finalize block_number: {:?}, new_nft_requests_key: {:x}, new_nft_requests_value: {:?}", block_number, key, pending_nft_queue);
 
-			let mut tokens_iterator = <orml_nft::Tokens<T> as IterableStorageDoubleMap<
-				T::ClassId,
-				T::TokenId,
-				orml_nft::TokenInfoOf<T>,
-			>>::iter_prefix(pending_nft.class_id);
-
-			let mut unique_dna = true;
-			while let Some((token_id, token_info)) = tokens_iterator.next() {
-				debug::info!(
-					"--- Token to compare uniqueness: token_id: {:?}, token_info: {:?}",
-					token_id,
-					token_info
-				);
-
-				if pending_nft.token_data.dna == token_info.data.dna {
-					unique_dna = false;
-					break;
-				}
-			}
-
-			if !unique_dna {
-				debug::info!("--- Not a unique dna: {:?}", pending_nft.token_data.dna);
-
-				let cancel_nft_closure = |_: &_| {
-					return Call::cancel_nft_request(
-						pending_nft.clone(),
-						b"DNA is not unique".to_vec(),
-					);
-				};
-				let _result = Self::send_signed(cancel_nft_closure);
-				return;
-			}
-
-			// TODO: Replace metadata with IPFS CID
-			let metadata = Vec::new();
-
-			let mint_nft_closure =
-				|_: &_| return Call::mint_nft(metadata.clone(), pending_nft.clone());
-			let _result = Self::send_signed(mint_nft_closure);
+				*pending_nft_queue = PendingNftQueueOf::<T>::new();
+			});
 		}
 
-		fn send_signed(
-			call_closure: impl Fn(&offchain::Account<T>) -> Call<T>,
-		) -> Result<(), Error<T>> {
-			let signer = Signer::<T, T::AuthorityId>::any_account();
-			let result = signer.send_signed_transaction(call_closure);
-
-			if let Some((acc, res)) = result {
-				if res.is_err() {
-					debug::error!(
-						"--- Send signed - Error: {:?}, account id: {:?}",
-						res,
-						acc.id
-					);
-					return Err(Error::<T>::OffchainSignedTxError);
-				}
-
-				debug::info!("--- Send signed - Ok");
-				return Ok(());
-			}
-
-			debug::error!("--- Send signed - No local account available");
-			return Err(Error::<T>::NoLocalAccountForSigning);
+		fn offchain_worker(block_number: T::BlockNumber) {
+			offchain::hook_init::<T>(block_number);
 		}
 	}
 }

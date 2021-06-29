@@ -21,10 +21,11 @@ frame-benchmarking = { default-features = false, optional = true, version = '3.1
 sp-std = { default-features = false, version = '3.0.0' }
 sp-runtime = { default-features = false, version = '3.0.0' }
 sp-core = { default-features = false, version = '3.0.0' }
+sp-io = { default-features = false, version = '3.0.0' }
 orml-nft = { version = "0.4.0", default-features = false }
 
 [dev-dependencies]
-sp-io = { default-features = false, version = '3.0.0' }
+
 
 [features]
 default = ['std']
@@ -37,6 +38,7 @@ std = [
 	'sp-std/std',
 	'sp-runtime/std',
 	'sp-core/std',
+	'sp-io/std',
 	'orml-nft/std',
 ]
 runtime-benchmarks = [

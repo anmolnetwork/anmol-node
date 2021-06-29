@@ -1,4 +1,9 @@
-use crate::mock::{Event, *};
+use crate::{
+	local_storage,
+	mock::{Event, *},
+	pallet::PendingNftQueue,
+	Error, PendingNft, TokenData,
+};
 use frame_support::{assert_noop, assert_ok};
 
 const ALICE: AccountId = AccountId::new([1u8; 32]);
@@ -7,16 +12,11 @@ const CLASS_ID: <Runtime as orml_nft::Config>::ClassId = 0;
 #[test]
 fn mint_nft_works() {
 	new_test_ext().execute_with(|| {
-		let pending_nft = crate::PendingNft {
+		let pending_nft = PendingNft {
 			account_id: ALICE,
 			class_id: CLASS_ID,
-			token_data: crate::TokenData::new(vec![0, 1, 2]),
+			token_data: TokenData::new(vec![0, 1, 2]),
 		};
-
-		assert_noop!(
-			Nft::mint_nft(Origin::signed(ALICE), vec![0], pending_nft.clone()),
-			crate::Error::<Runtime>::TryToRemoveNftWhichDoesNotExist
-		);
 
 		assert_ok!(Nft::nft_request(
 			Origin::signed(ALICE),
@@ -40,13 +40,20 @@ fn mint_nft_works() {
 		));
 		assert_eq!(last_event(), event);
 
+		assert_noop!(
+			Nft::mint_nft(Origin::signed(ALICE), [0_u8; 16], pending_nft.clone()),
+			Error::<Runtime>::IncorrectNftKeyHash
+		);
+
+		let nft_key_hash =
+			local_storage::get_nft_key_hash::<Runtime>(CLASS_ID, pending_nft.clone().token_data);
 		assert_ok!(Nft::mint_nft(
 			Origin::signed(ALICE),
-			vec![2],
+			nft_key_hash,
 			pending_nft.clone()
 		));
 
-		let event = Event::pallet_nft(crate::Event::NftMinted(pending_nft, vec![2]));
+		let event = Event::pallet_nft(crate::Event::NftMinted(pending_nft, nft_key_hash));
 		assert_eq!(last_event(), event);
 	});
 }
@@ -54,9 +61,9 @@ fn mint_nft_works() {
 #[test]
 fn nft_request_works() {
 	new_test_ext().execute_with(|| {
-		assert_eq!(crate::pallet::NftPendingQueue::<Runtime>::get(), vec![]);
+		assert_eq!(PendingNftQueue::<Runtime>::get(), vec![]);
 
-		let token_data = crate::TokenData::new(vec![0, 0, 1]);
+		let token_data = TokenData::new(vec![0, 0, 1]);
 
 		assert_ok!(Nft::nft_request(
 			Origin::signed(ALICE),
@@ -64,7 +71,7 @@ fn nft_request_works() {
 			token_data.clone()
 		));
 
-		let pending_nft = crate::PendingNft {
+		let pending_nft = PendingNft {
 			account_id: ALICE,
 			class_id: CLASS_ID,
 			token_data,
@@ -73,9 +80,6 @@ fn nft_request_works() {
 		let event = Event::pallet_nft(crate::Event::NftRequest(pending_nft.clone()));
 		assert_eq!(last_event(), event);
 
-		assert_eq!(
-			crate::pallet::NftPendingQueue::<Runtime>::get(),
-			vec![pending_nft]
-		);
+		assert_eq!(PendingNftQueue::<Runtime>::get(), vec![pending_nft]);
 	});
 }
