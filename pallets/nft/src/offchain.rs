@@ -2,7 +2,7 @@ use crate::{
 	local_storage::{get_nft_key_hash, LocalStorageValue, VecKey},
 	pallet::Call,
 	utils::remove_vector_item,
-	ByteVector, Config, Error, PendingNftOf, PendingNftQueueOf,
+	TokenData, Config, Error, PendingNftOf, PendingNftQueueOf,
 };
 use codec::{Decode, Encode};
 use frame_support::{pallet_prelude::debug, RuntimeDebug};
@@ -33,7 +33,7 @@ pub mod crypto {
 #[derive(Encode, Decode, Clone, RuntimeDebug, Default)]
 struct LocalNftMetadata<ClassId: Default> {
 	mould_id: ClassId,
-	dna: ByteVector,
+	token_data: TokenData,
 }
 
 type LocalNftMetadataOf<T> = LocalNftMetadata<<T as orml_nft::Config>::ClassId>;
@@ -114,7 +114,7 @@ fn execute_nft_from_pending_queue<T: Config>(pending_nft: PendingNftOf<T>) -> Re
 		Ok(()) => {
 			let metadata = LocalNftMetadata {
 				mould_id: pending_nft.class_id,
-				dna: pending_nft.token_data.dna,
+				token_data: pending_nft.token_data,
 			};
 
 			local_nft_metadata.set(&metadata);
