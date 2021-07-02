@@ -3,7 +3,7 @@
 Anmol is the First Cross-Chain NFT Toolkit, on Polkadot. Introducing:
 
 - Moulds
-- NFT Breeding
+- NFT Morphing
 - Multi-Chain NFT Migration
 - ink! for Moulds
 - DAO-based Communities
