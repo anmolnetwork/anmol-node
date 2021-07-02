@@ -53,7 +53,7 @@ pub struct TokenInfo<AccountId, Data> {
 	/// Token metadata
 	pub metadata: Vec<u8>,
 	/// Token owner
-	pub owner: AccountId,
+	pub owners: Vec<AccountId>,
 	/// Token Properties
 	pub data: Data,
 }
@@ -203,6 +203,15 @@ pub mod module {
 	impl<T: Config> Pallet<T> {}
 }
 
+fn copy_slice(dst: &mut [u8], src: &[u8]) -> usize {
+    let mut c = 0;
+    for (d, s) in dst.iter_mut().zip(src.iter()) {
+        *d = *s;
+        c += 1;
+    }
+    c 
+}
+
 impl<T: Config> Pallet<T> {
 	/// Create NFT(non fungible token) class
 	pub fn create_class(
@@ -231,19 +240,31 @@ impl<T: Config> Pallet<T> {
 
 	/// Transfer NFT(non fungible token) from `from` account to `to` account
 	pub fn transfer(
-		from: &T::AccountId,
-		to: &T::AccountId,
+		from: Vec<&T::AccountId>,
+		to: Vec<&T::AccountId>,
 		token: (T::ClassId, T::TokenId),
 	) -> DispatchResult {
 		Tokens::<T>::try_mutate(token.0, token.1, |token_info| -> DispatchResult {
 			let mut info = token_info.as_mut().ok_or(Error::<T>::TokenNotFound)?;
-			ensure!(info.owner == *from, Error::<T>::NoPermission);
+
+			ensure!(info.owners.iter().any(|v| from.iter().any(|w| w ==  &v)), Error::<T>::NoPermission);
+		
 			if from == to {
 				// no change needed
 				return Ok(());
 			}
 
-			info.owner = to.clone();
+			// info.owners = to.clone();
+
+			// info.owners = "FOOBAR";
+
+			// info.owners = new_slice
+
+			// info.owners = (*to).clone_from_slice(*to);
+
+			info.owners = (*to).to_vec();
+			
+			// = (*to).clone_from_slice();
 
 			#[cfg(not(feature = "disable-tokens-by-owner"))]
 			{
