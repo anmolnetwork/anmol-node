@@ -2,7 +2,7 @@ use crate::{
 	local_storage::{get_nft_key_hash, LocalStorageValue, VecKey},
 	pallet::Call,
 	utils::remove_vector_item,
-	TokenData, Config, Error, PendingNftOf, PendingNftQueueOf,
+	Config, Error, PendingNftOf, PendingNftQueueOf, TokenData,
 };
 use codec::{Decode, Encode};
 use frame_support::{pallet_prelude::debug, RuntimeDebug};
