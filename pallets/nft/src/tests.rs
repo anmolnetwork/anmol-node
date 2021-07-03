@@ -15,7 +15,7 @@ fn mint_nft_works() {
 		let pending_nft = PendingNft {
 			account_id: ALICE,
 			class_id: CLASS_ID,
-			token_data: TokenData::new(vec![0, 1, 2]),
+			token_data: TokenData::new(vec![0, 1, 2], Default::default()),
 		};
 
 		assert_ok!(Nft::nft_request(
@@ -63,7 +63,7 @@ fn nft_request_works() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(PendingNftQueue::<Runtime>::get(), vec![]);
 
-		let token_data = TokenData::new(vec![0, 0, 1]);
+		let token_data = TokenData::new(vec![0, 0, 1], Default::default());
 
 		assert_ok!(Nft::nft_request(
 			Origin::signed(ALICE),

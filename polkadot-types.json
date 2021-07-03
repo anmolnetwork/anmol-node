@@ -18,7 +18,8 @@
     "TokenId": "u32",
     "ClassData": {},
     "TokenData": {
-        "dna": "ByteVector"
+        "dna": "ByteVector",
+        "ipfs_cid": "ByteVector"
     },
     "PendingNft": {
         "account_id": "AccountId",

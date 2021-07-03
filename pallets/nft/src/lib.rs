@@ -57,13 +57,13 @@ pub struct ClassData {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, PartialOrd, Ord)]
 pub struct TokenData {
 	dna: ByteVector,
-	// To be expanded
+	ipfs_cid: ByteVector,
 }
 
 #[cfg(test)]
 impl TokenData {
-	fn new(dna: ByteVector) -> Self {
-		TokenData { dna }
+	fn new(dna: ByteVector, ipfs_cid: ByteVector) -> Self {
+		TokenData { dna, ipfs_cid }
 	}
 }
 
