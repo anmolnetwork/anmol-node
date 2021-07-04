@@ -15,7 +15,6 @@ parameter_types! {
 }
 
 pub type AccountId = u128;
-
 pub type BlockNumber = u64;
 
 impl frame_system::Config for Runtime {
