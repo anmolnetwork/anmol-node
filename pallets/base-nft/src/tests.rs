@@ -31,9 +31,19 @@ fn mint_should_work() {
 		assert_eq!(next_class_id, CLASS_ID);
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
 		assert_eq!(NonFungibleTokenModule::next_token_id(CLASS_ID), 0);
-		assert_ok!(NonFungibleTokenModule::mint([&BOB].to_vec(), CLASS_ID, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(
+			[&BOB].to_vec(),
+			CLASS_ID,
+			vec![1],
+			()
+		));
 		assert_eq!(NonFungibleTokenModule::next_token_id(CLASS_ID), 1);
-		assert_ok!(NonFungibleTokenModule::mint([&BOB].to_vec(), CLASS_ID, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(
+			[&BOB].to_vec(),
+			CLASS_ID,
+			vec![1],
+			()
+		));
 		assert_eq!(NonFungibleTokenModule::next_token_id(CLASS_ID), 2);
 
 		let next_class_id = NonFungibleTokenModule::next_class_id();
@@ -77,7 +87,12 @@ fn mint_should_fail() {
 fn transfer_should_work() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint([&BOB].to_vec(), CLASS_ID, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(
+			[&BOB].to_vec(),
+			CLASS_ID,
+			vec![1],
+			()
+		));
 		assert_ok!(NonFungibleTokenModule::transfer(
 			[&BOB].to_vec(),
 			[&BOB].to_vec(),
@@ -96,7 +111,10 @@ fn transfer_should_work() {
 			(CLASS_ID, TOKEN_ID),
 			50
 		));
-		assert!(NonFungibleTokenModule::is_owner([&BOB].to_vec(), (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(
+			[&BOB].to_vec(),
+			(CLASS_ID, TOKEN_ID)
+		));
 	});
 }
 
@@ -104,13 +122,28 @@ fn transfer_should_work() {
 fn transfer_should_fail() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint([&BOB].to_vec(), CLASS_ID, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(
+			[&BOB].to_vec(),
+			CLASS_ID,
+			vec![1],
+			()
+		));
 		assert_noop!(
-			NonFungibleTokenModule::transfer([&BOB].to_vec(), [&ALICE].to_vec(), (CLASS_ID, TOKEN_ID_NOT_EXIST), 30),
+			NonFungibleTokenModule::transfer(
+				[&BOB].to_vec(),
+				[&ALICE].to_vec(),
+				(CLASS_ID, TOKEN_ID_NOT_EXIST),
+				30
+			),
 			Error::<Runtime>::TokenNotFound
 		);
 		assert_noop!(
-			NonFungibleTokenModule::transfer([&ALICE].to_vec(), [&BOB].to_vec(), (CLASS_ID, TOKEN_ID), 40),
+			NonFungibleTokenModule::transfer(
+				[&ALICE].to_vec(),
+				[&BOB].to_vec(),
+				(CLASS_ID, TOKEN_ID),
+				40
+			),
 			Error::<Runtime>::NoPermission
 		);
 		assert_noop!(
@@ -118,7 +151,12 @@ fn transfer_should_fail() {
 			Error::<Runtime>::ClassNotFound
 		);
 		assert_noop!(
-			NonFungibleTokenModule::transfer([&ALICE].to_vec(), [&ALICE].to_vec(), (CLASS_ID, TOKEN_ID), 25),
+			NonFungibleTokenModule::transfer(
+				[&ALICE].to_vec(),
+				[&ALICE].to_vec(),
+				(CLASS_ID, TOKEN_ID),
+				25
+			),
 			Error::<Runtime>::NoPermission
 		);
 	});
@@ -128,8 +166,16 @@ fn transfer_should_fail() {
 fn burn_should_work() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint([&BOB].to_vec(), CLASS_ID, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::burn([&BOB].to_vec(), (CLASS_ID, TOKEN_ID)));
+		assert_ok!(NonFungibleTokenModule::mint(
+			[&BOB].to_vec(),
+			CLASS_ID,
+			vec![1],
+			()
+		));
+		assert_ok!(NonFungibleTokenModule::burn(
+			[&BOB].to_vec(),
+			(CLASS_ID, TOKEN_ID)
+		));
 	});
 }
 
@@ -137,7 +183,12 @@ fn burn_should_work() {
 fn burn_should_fail() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint([&BOB].to_vec(), CLASS_ID, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(
+			[&BOB].to_vec(),
+			CLASS_ID,
+			vec![1],
+			()
+		));
 		assert_noop!(
 			NonFungibleTokenModule::burn([&BOB].to_vec(), (CLASS_ID, TOKEN_ID_NOT_EXIST)),
 			Error::<Runtime>::TokenNotFound
@@ -151,7 +202,12 @@ fn burn_should_fail() {
 
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint([&BOB].to_vec(), CLASS_ID, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(
+			[&BOB].to_vec(),
+			CLASS_ID,
+			vec![1],
+			()
+		));
 
 		Classes::<Runtime>::mutate(CLASS_ID, |class_info| {
 			class_info.as_mut().unwrap().total_issuance = 0;
@@ -167,8 +223,16 @@ fn burn_should_fail() {
 fn destroy_class_should_work() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint([&BOB].to_vec(), CLASS_ID, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::burn([&BOB].to_vec(), (CLASS_ID, TOKEN_ID)));
+		assert_ok!(NonFungibleTokenModule::mint(
+			[&BOB].to_vec(),
+			CLASS_ID,
+			vec![1],
+			()
+		));
+		assert_ok!(NonFungibleTokenModule::burn(
+			[&BOB].to_vec(),
+			(CLASS_ID, TOKEN_ID)
+		));
 		assert_ok!(NonFungibleTokenModule::destroy_class(&ALICE, CLASS_ID));
 		assert_eq!(Classes::<Runtime>::contains_key(CLASS_ID), false);
 		assert_eq!(NextTokenId::<Runtime>::contains_key(CLASS_ID), false);
@@ -179,7 +243,12 @@ fn destroy_class_should_work() {
 fn destroy_class_should_fail() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint([&BOB].to_vec(), CLASS_ID, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(
+			[&BOB].to_vec(),
+			CLASS_ID,
+			vec![1],
+			()
+		));
 		assert_noop!(
 			NonFungibleTokenModule::destroy_class(&ALICE, CLASS_ID_NOT_EXIST),
 			Error::<Runtime>::ClassNotFound
@@ -195,7 +264,10 @@ fn destroy_class_should_fail() {
 			Error::<Runtime>::CannotDestroyClass
 		);
 
-		assert_ok!(NonFungibleTokenModule::burn([&BOB].to_vec(), (CLASS_ID, TOKEN_ID)));
+		assert_ok!(NonFungibleTokenModule::burn(
+			[&BOB].to_vec(),
+			(CLASS_ID, TOKEN_ID)
+		));
 		assert_ok!(NonFungibleTokenModule::destroy_class(&ALICE, CLASS_ID));
 		assert_eq!(Classes::<Runtime>::contains_key(CLASS_ID), false);
 	});

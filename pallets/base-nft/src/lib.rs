@@ -270,7 +270,6 @@ impl<T: Config> Pallet<T> {
 	) -> Result<T::TokenId, DispatchError> {
 		NextTokenId::<T>::try_mutate(class_id, |id| -> Result<T::TokenId, DispatchError> {
 			let token_id = *id;
-
 			*id = id
 				.checked_add(&One::one())
 				.ok_or(Error::<T>::NoAvailableTokenId)?;
@@ -289,11 +288,9 @@ impl<T: Config> Pallet<T> {
 				owners: owners.into_iter().cloned().collect(),
 				data,
 			};
-
 			let owners_token = token_info.owners.clone();
 
 			Tokens::<T>::insert(class_id, token_id, token_info);
-
 			#[cfg(not(feature = "disable-tokens-by-owner"))]
 			TokensByOwner::<T>::insert(owners_token, (class_id, token_id), ());
 
@@ -304,9 +301,7 @@ impl<T: Config> Pallet<T> {
 	/// Burn NFT(non fungible token) from `owner`
 	pub fn burn(owners: Vec<&T::AccountId>, token: (T::ClassId, T::TokenId)) -> DispatchResult {
 		Tokens::<T>::try_mutate_exists(token.0, token.1, |token_info| -> DispatchResult {
-			//TODO: Implement
 			let t = token_info.take().ok_or(Error::<T>::TokenNotFound)?;
-
 			ensure!(
 				t.owners
 					.iter()
