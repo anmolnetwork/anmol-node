@@ -76,14 +76,16 @@ pub struct ClassData {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, PartialOrd, Ord)]
 pub struct TokenData {
 	dna: ByteVector,
-	fraction_owned: u64
-	// To be expanded
+	fraction_owned: u64, // To be expanded
 }
 
 #[cfg(test)]
 impl TokenData {
 	fn new(dna: ByteVector, fraction_owned: u64) -> Self {
-		TokenData { dna, fraction_owned }
+		TokenData {
+			dna,
+			fraction_owned,
+		}
 	}
 }
 
@@ -195,7 +197,7 @@ pub mod pallet {
 			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
 
 			let minting_result = BaseNft::<T>::mint(
-				&pending_nft.account_id,
+				[&pending_nft.account_id].to_vec(),
 				pending_nft.class_id.clone(),
 				metadata.clone(),
 				pending_nft.token_data.clone(),
