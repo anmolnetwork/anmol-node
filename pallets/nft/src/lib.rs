@@ -2,7 +2,6 @@
 
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::{
-	offchain::{AppCrypto, CreateSignedTransaction},
 	pallet_prelude::*,
 };
 
@@ -19,10 +18,6 @@ mod mock;
 
 #[cfg(test)]
 mod tests;
-
-pub mod local_storage;
-pub mod offchain;
-pub mod utils;
 
 pub type ByteVector = Vec<u8>;
 
@@ -56,14 +51,13 @@ pub struct ClassData {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, PartialOrd, Ord)]
 pub struct TokenData {
-	dna: ByteVector,
-	ipfs_cid: ByteVector,
+	// To be expanded
 }
 
 #[cfg(test)]
 impl TokenData {
-	fn new(dna: ByteVector, ipfs_cid: ByteVector) -> Self {
-		TokenData { dna, ipfs_cid }
+	fn new() -> Self {
+		TokenData {}
 	}
 }
 
@@ -75,9 +69,7 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config
 		+ orml_nft::Config<TokenData = TokenData, ClassData = ClassData>
-		+ CreateSignedTransaction<Call<Self>>
 	{
-		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 		type Call: From<Call<Self>>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 	}
@@ -90,16 +82,8 @@ pub mod pallet {
 	pub(super) type PendingNftQueue<T: Config> = StorageValue<_, PendingNftQueueOf<T>, ValueQuery>;
 
 	#[pallet::error]
-	#[derive(PartialEq)]
 	pub enum Error<T> {
-		NoLocalAccountForSigning,
-		OffchainSignedTxError,
-		OffchainLock,
-		OffchainValueNotFound,
-		OffchainValueDecode,
-		OffchainLocalNftMetadataAlreadyExist,
-		IncorrectNftKeyHash,
-		RemoveVectorItem,
+		
 	}
 
 	#[pallet::event]
@@ -107,9 +91,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		NftClassCreated(T::AccountId, T::ClassId, ClassData, ByteVector),
-		NftRequest(PendingNftOf<T>),
-		CancelNftRequest(ByteVector, PendingNftOf<T>),
-		NftMinted(PendingNftOf<T>, local_storage::KeyHash),
+		IpfsNftMinted(T::AccountId, T::TokenId, ByteVector),
 		NftError(DispatchError),
 	}
 
@@ -132,83 +114,36 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1))]
-		pub fn nft_request(
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(0, 0))]
+		pub fn mint_ipfs_nft(
 			origin: OriginFor<T>,
-			class_id: T::ClassId,
-			token_data: TokenData,
+			ipfs_cid: ByteVector,
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
-			let pending_nft = PendingNft {
-				account_id,
-				class_id,
-				token_data,
+			let token_id = match OrmlNft::<T>::mint(
+				&account_id,
+				0_u32.into(), // TODO: Replace with enum NftClassId.IpfsNft
+				ipfs_cid.clone(),
+				Default::default(),
+			) {
+				Ok(token_id) => token_id,
+				Err(error) => {
+					debug::error!("--- Nft minting error: {:?}", error);
+					Self::deposit_event(Event::NftError(error));
+					return Err(error.into());
+				}
 			};
 
-			PendingNftQueue::<T>::mutate(|pending_nft_queue| {
-				pending_nft_queue.push(pending_nft.clone());
-			});
+			debug::info!("--- IPFS NFT minted: {:?}", ipfs_cid);
 
-			Self::deposit_event(Event::NftRequest(pending_nft));
-			Ok(().into())
-		}
-
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(4, 5))]
-		pub fn mint_nft(
-			origin: OriginFor<T>,
-			key_hash: local_storage::KeyHash,
-			pending_nft: PendingNftOf<T>,
-		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
-			// TODO: Check if account_id is signed by off-chain worker
-
-			if key_hash
-				!= local_storage::get_nft_key_hash::<T>(
-					pending_nft.class_id,
-					pending_nft.token_data.clone(),
-				) {
-				debug::error!("--- Error: IncorrectNftKeyHash");
-				return Err(Error::<T>::IncorrectNftKeyHash.into());
-			}
-
-			let minting_result = OrmlNft::<T>::mint(
-				&pending_nft.account_id,
-				pending_nft.class_id,
-				key_hash.to_vec(),
-				pending_nft.token_data.clone(),
-			);
-
-			if let Err(error) = minting_result {
-				sp_io::offchain_index::clear(&key_hash);
-
-				debug::error!("--- Nft minting error: {:?}", error);
-				Self::deposit_event(Event::NftError(error));
-				return Err(error.into());
-			}
-
-			debug::info!("--- Nft minted: {:?}", pending_nft);
-
-			Self::deposit_event(Event::NftMinted(pending_nft, key_hash));
+			Self::deposit_event(Event::IpfsNftMinted(account_id, token_id, ipfs_cid));
 			Ok(().into())
 		}
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(block_number: T::BlockNumber) {
-			let key = offchain::offchain_new_nft_requests_key();
 
-			PendingNftQueue::<T>::mutate(|pending_nft_queue| {
-				sp_io::offchain_index::set(&key.0, &pending_nft_queue.encode());
-				debug::info!("--- on_finalize block_number: {:?}, new_nft_requests_key: {:x}, new_nft_requests_value: {:?}", block_number, key, pending_nft_queue);
-
-				*pending_nft_queue = PendingNftQueueOf::<T>::new();
-			});
-		}
-
-		fn offchain_worker(block_number: T::BlockNumber) {
-			offchain::hook_init::<T>(block_number);
-		}
 	}
 }
