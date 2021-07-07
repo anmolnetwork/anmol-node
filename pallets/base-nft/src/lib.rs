@@ -21,7 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, EncodeLike};
 use frame_support::{ensure, pallet_prelude::*, Parameter};
 use sp_runtime::{
 	traits::{
@@ -56,6 +56,11 @@ pub struct TokenInfo<AccountId, Data> {
 	pub owners: Vec<AccountId>,
 	/// Token Properties
 	pub data: Data,
+}
+
+#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, EncodeLike)]
+pub struct TokenByOwnerData {
+	percent_owned: u8,
 }
 
 pub use module::*;
@@ -151,7 +156,7 @@ pub mod module {
 	pub type TokensByOwner<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
-		Vec<T::AccountId>,
+		T::AccountId,
 		Twox64Concat,
 		(T::ClassId, T::TokenId),
 		(),
@@ -231,15 +236,15 @@ impl<T: Config> Pallet<T> {
 
 	/// Transfer NFT(non fungible token) from `from` account to `to` account
 	pub fn transfer(
-		from: Vec<&T::AccountId>,
-		to: Vec<&T::AccountId>,
+		from: &T::AccountId,
+		to: &T::AccountId,
 		token: (T::ClassId, T::TokenId),
-		fraction_amount: u8,
+		percentage: u8,
 	) -> DispatchResult {
 		Tokens::<T>::try_mutate(token.0, token.1, |token_info| -> DispatchResult {
 			let mut info = token_info.as_mut().ok_or(Error::<T>::TokenNotFound)?;
 			ensure!(
-				info.owners.iter().any(|v| from.iter().any(|w| w == &v)),
+				info.owners.iter().any(|owner| owner == from),
 				Error::<T>::NoPermission
 			);
 
@@ -248,13 +253,18 @@ impl<T: Config> Pallet<T> {
 				return Ok(());
 			}
 
-			// TODO: assign partial ownership according to fraction_amount
-			info.owners = to.into_iter().cloned().collect();
+			info.owners = vec![to.clone()];
 
 			#[cfg(not(feature = "disable-tokens-by-owner"))]
 			{
 				TokensByOwner::<T>::remove(from, token);
-				TokensByOwner::<T>::insert(info.owners.clone(), token, ());
+				TokensByOwner::<T>::insert(
+					to,
+					token,
+					TokenByOwnerData {
+						percent_owned: percentage,
+					},
+				);
 			}
 
 			Ok(())
@@ -263,12 +273,14 @@ impl<T: Config> Pallet<T> {
 
 	/// Mint NFT(non fungible token) to `owners`
 	pub fn mint(
-		owners: Vec<&T::AccountId>,
+		owner: &T::AccountId,
 		class_id: T::ClassId,
 		metadata: Vec<u8>,
 		data: T::TokenData,
 	) -> Result<T::TokenId, DispatchError> {
 		NextTokenId::<T>::try_mutate(class_id, |id| -> Result<T::TokenId, DispatchError> {
+			// amount of ownership minter receives by default
+			const percent_owned: u8 = 100;
 			let token_id = *id;
 			*id = id
 				.checked_add(&One::one())
@@ -285,27 +297,28 @@ impl<T: Config> Pallet<T> {
 
 			let token_info = TokenInfo {
 				metadata,
-				owners: owners.into_iter().cloned().collect(),
+				owners: vec![owner.clone()],
 				data,
 			};
-			let owners_token = token_info.owners.clone();
 
 			Tokens::<T>::insert(class_id, token_id, token_info);
 			#[cfg(not(feature = "disable-tokens-by-owner"))]
-			TokensByOwner::<T>::insert(owners_token, (class_id, token_id), ());
+			TokensByOwner::<T>::insert(
+				owner,
+				(class_id, token_id),
+				TokenByOwnerData { percent_owned },
+			);
 
 			Ok(token_id)
 		})
 	}
 
 	/// Burn NFT(non fungible token) from `owner`
-	pub fn burn(owners: Vec<&T::AccountId>, token: (T::ClassId, T::TokenId)) -> DispatchResult {
+	pub fn burn(owner: &T::AccountId, token: (T::ClassId, T::TokenId)) -> DispatchResult {
 		Tokens::<T>::try_mutate_exists(token.0, token.1, |token_info| -> DispatchResult {
 			let t = token_info.take().ok_or(Error::<T>::TokenNotFound)?;
 			ensure!(
-				t.owners
-					.iter()
-					.any(|v| owners.iter().any(|owner| v == *owner)),
+				t.owners.iter().any(|token_owner| *token_owner == *owner),
 				Error::<T>::NoPermission
 			);
 
@@ -319,7 +332,7 @@ impl<T: Config> Pallet<T> {
 			})?;
 
 			#[cfg(not(feature = "disable-tokens-by-owner"))]
-			TokensByOwner::<T>::remove(owners, token);
+			TokensByOwner::<T>::remove(owner, token);
 
 			Ok(())
 		})
@@ -341,13 +354,11 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	pub fn is_owner(accounts: Vec<&T::AccountId>, token: (T::ClassId, T::TokenId)) -> bool {
+	pub fn is_owner(account: &T::AccountId, token: (T::ClassId, T::TokenId)) -> bool {
 		#[cfg(feature = "disable-tokens-by-owner")]
-		return Tokens::<T>::get(token.0, token.1).map_or(false, |token| {
-			accounts.iter().any(|account| *account == token.owner)
-		});
+		return Tokens::<T>::get(token.0, token.1).map_or(false, |token| token.owner == *account);
 
 		#[cfg(not(feature = "disable-tokens-by-owner"))]
-		TokensByOwner::<T>::contains_key(accounts, token)
+		TokensByOwner::<T>::contains_key(account, token)
 	}
 }

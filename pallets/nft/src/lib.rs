@@ -76,16 +76,12 @@ pub struct ClassData {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, PartialOrd, Ord)]
 pub struct TokenData {
 	dna: ByteVector,
-	fraction_owned: u64, // To be expanded
 }
 
 #[cfg(test)]
 impl TokenData {
-	fn new(dna: ByteVector, fraction_owned: u64) -> Self {
-		TokenData {
-			dna,
-			fraction_owned,
-		}
+	fn new(dna: ByteVector) -> Self {
+		TokenData { dna }
 	}
 }
 
