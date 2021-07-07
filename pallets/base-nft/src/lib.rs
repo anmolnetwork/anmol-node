@@ -271,7 +271,7 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	/// Mint NFT(non fungible token) to `owners`
+	/// Mint NFT(non fungible token) to `owner`
 	pub fn mint(
 		owner: &T::AccountId,
 		class_id: T::ClassId,
@@ -279,8 +279,6 @@ impl<T: Config> Pallet<T> {
 		data: T::TokenData,
 	) -> Result<T::TokenId, DispatchError> {
 		NextTokenId::<T>::try_mutate(class_id, |id| -> Result<T::TokenId, DispatchError> {
-			// amount of ownership minter receives by default
-			const percent_owned: u8 = 100;
 			let token_id = *id;
 			*id = id
 				.checked_add(&One::one())
@@ -306,7 +304,8 @@ impl<T: Config> Pallet<T> {
 			TokensByOwner::<T>::insert(
 				owner,
 				(class_id, token_id),
-				TokenByOwnerData { percent_owned },
+				// By default, minter gets 100% ownership
+				TokenByOwnerData { percent_owned: 100 },
 			);
 
 			Ok(token_id)

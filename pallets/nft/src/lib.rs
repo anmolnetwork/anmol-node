@@ -76,6 +76,7 @@ pub struct ClassData {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, PartialOrd, Ord)]
 pub struct TokenData {
 	dna: ByteVector,
+	// To be expanded
 }
 
 #[cfg(test)]
