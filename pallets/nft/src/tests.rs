@@ -10,7 +10,7 @@ fn mint_nft_works() {
 		let pending_nft = crate::PendingNft {
 			account_id: ALICE,
 			class_id: CLASS_ID,
-			token_data: crate::TokenData::new(vec![0, 1, 2], 25),
+			token_data: crate::TokenData::new(vec![0, 1, 2]),
 		};
 
 		assert_noop!(
@@ -50,7 +50,7 @@ fn nft_request_works() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(crate::pallet::NftPendingQueue::<Runtime>::get(), vec![]);
 
-		let token_data = crate::TokenData::new(vec![0, 0, 1], 25);
+		let token_data = crate::TokenData::new(vec![0, 0, 1]);
 
 		assert_ok!(Nft::nft_request(
 			Origin::signed(ALICE),
