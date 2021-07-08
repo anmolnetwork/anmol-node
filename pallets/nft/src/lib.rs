@@ -194,7 +194,7 @@ pub mod pallet {
 			Self::remove_nft_from_pending_queue(pending_nft.clone())?;
 
 			let minting_result = BaseNft::<T>::mint(
-				[&pending_nft.account_id].to_vec(),
+				&pending_nft.account_id,
 				pending_nft.class_id.clone(),
 				metadata.clone(),
 				pending_nft.token_data.clone(),

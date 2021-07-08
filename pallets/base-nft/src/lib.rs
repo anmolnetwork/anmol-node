@@ -21,7 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
-use codec::{Decode, Encode, EncodeLike};
+use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::*, Parameter};
 use sp_runtime::{
 	traits::{
@@ -56,11 +56,6 @@ pub struct TokenInfo<AccountId, Data> {
 	pub owners: Vec<AccountId>,
 	/// Token Properties
 	pub data: Data,
-}
-
-#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, EncodeLike)]
-pub struct TokenByOwnerData {
-	percent_owned: u8,
 }
 
 pub use module::*;
@@ -147,6 +142,11 @@ pub mod module {
 	pub type Tokens<T: Config> =
 		StorageDoubleMap<_, Twox64Concat, T::ClassId, Twox64Concat, T::TokenId, TokenInfoOf<T>>;
 
+	#[derive(Default, Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
+	pub struct TokenByOwnerData {
+		pub percent_owned: u8,
+	}
+
 	/// Token existence check by owner and class ID.
 	// TODO: pallet macro doesn't support conditional compiling. Always having `TokensByOwner` storage doesn't hurt but
 	// it could be removed once conditional compiling supported.
@@ -159,7 +159,7 @@ pub mod module {
 		T::AccountId,
 		Twox64Concat,
 		(T::ClassId, T::TokenId),
-		(),
+		TokenByOwnerData,
 		ValueQuery,
 	>;
 
@@ -187,7 +187,7 @@ pub mod module {
 				.expect("Create class cannot fail while building genesis");
 				for (account_id, token_metadata, token_data) in &token_class.3 {
 					Pallet::<T>::mint(
-						vec![&account_id],
+						&account_id,
 						class_id,
 						token_metadata.to_vec(),
 						token_data.clone(),
@@ -253,7 +253,7 @@ impl<T: Config> Pallet<T> {
 				return Ok(());
 			}
 
-			info.owners = vec![to.clone()];
+			info.owners = [to.clone()].to_vec();
 
 			#[cfg(not(feature = "disable-tokens-by-owner"))]
 			{
@@ -295,7 +295,7 @@ impl<T: Config> Pallet<T> {
 
 			let token_info = TokenInfo {
 				metadata,
-				owners: vec![owner.clone()],
+				owners: [owner.clone()].to_vec(),
 				data,
 			};
 
