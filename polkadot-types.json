@@ -17,16 +17,5 @@
     "ClassId": "u32",
     "TokenId": "u32",
     "ClassData": {},
-    "TokenData": {
-        "dna": "ByteVector",
-        "ipfs_cid": "ByteVector"
-    },
-    "PendingNft": {
-        "account_id": "AccountId",
-        "class_id": "ClassId",
-        "token_data": "TokenData"
-    },
-    "PendingNftOf": "PendingNft",
-    "PendingNftQueueOf": "Vec<PendingNftOf>",
-    "KeyHash": "[u8; 16]"
+    "TokenData": {}
 }

@@ -54,13 +54,6 @@ pub struct TokenData {
 	// To be expanded
 }
 
-#[cfg(test)]
-impl TokenData {
-	fn new() -> Self {
-		TokenData {}
-	}
-}
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -121,19 +114,12 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
-			let token_id = match OrmlNft::<T>::mint(
+			let token_id = OrmlNft::<T>::mint(
 				&account_id,
 				0_u32.into(), // TODO: Replace with enum NftClassId.IpfsNft
 				ipfs_cid.clone(),
 				Default::default(),
-			) {
-				Ok(token_id) => token_id,
-				Err(error) => {
-					debug::error!("--- Nft minting error: {:?}", error);
-					Self::deposit_event(Event::NftError(error));
-					return Err(error.into());
-				}
-			};
+			)?;
 
 			debug::info!("--- IPFS NFT minted: {:?}", ipfs_cid);
 
