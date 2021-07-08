@@ -1,6 +1,4 @@
-use crate::{
-	mock::{Event, *},
-};
+use crate::mock::{Event, *};
 use frame_support::{assert_noop, assert_ok};
 
 const ALICE: AccountId = AccountId::new([1u8; 32]);
@@ -23,16 +21,10 @@ fn mint_ipfs_nft_works() {
 			vec![1],
 		));
 		assert_eq!(last_event(), event);
-		
-		assert_ok!(
-			Nft::mint_ipfs_nft(Origin::signed(ALICE), vec![0, 1, 2]),
-		);
-		
-		let event = Event::pallet_nft(crate::Event::IpfsNftMinted(
-			ALICE,
-			0,
-			vec![0, 1, 2],
-		));
+
+		assert_ok!(Nft::mint_ipfs_nft(Origin::signed(ALICE), vec![0, 1, 2]),);
+
+		let event = Event::pallet_nft(crate::Event::IpfsNftMinted(ALICE, 0, vec![0, 1, 2]));
 		assert_eq!(last_event(), event);
 	});
 }

@@ -1,9 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
-use frame_system::{
-	pallet_prelude::*,
-};
+use frame_system::pallet_prelude::*;
 
 use orml_nft::Module as OrmlNft;
 pub use pallet::*;
@@ -60,8 +58,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config
-		+ orml_nft::Config<TokenData = TokenData, ClassData = ClassData>
+		frame_system::Config + orml_nft::Config<TokenData = TokenData, ClassData = ClassData>
 	{
 		type Call: From<Call<Self>>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -75,9 +72,7 @@ pub mod pallet {
 	pub(super) type PendingNftQueue<T: Config> = StorageValue<_, PendingNftQueueOf<T>, ValueQuery>;
 
 	#[pallet::error]
-	pub enum Error<T> {
-		
-	}
+	pub enum Error<T> {}
 
 	#[pallet::event]
 	#[pallet::metadata(T::AccountId = "AccountId")]
@@ -129,7 +124,5 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-
-	}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 }
