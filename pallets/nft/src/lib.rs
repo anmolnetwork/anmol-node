@@ -8,7 +8,6 @@ pub use pallet::*;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::DispatchError;
 use sp_std::{cmp::Ordering, vec::Vec};
 
 #[cfg(test)]
@@ -35,10 +34,6 @@ where
 		Some(self.cmp(other))
 	}
 }
-
-type PendingNftOf<T> =
-	PendingNft<<T as frame_system::Config>::AccountId, <T as orml_nft::Config>::ClassId>;
-pub type PendingNftQueueOf<T> = Vec<PendingNftOf<T>>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
@@ -68,9 +63,6 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	#[pallet::storage]
-	pub(super) type PendingNftQueue<T: Config> = StorageValue<_, PendingNftQueueOf<T>, ValueQuery>;
-
 	#[pallet::error]
 	pub enum Error<T> {}
 
@@ -80,7 +72,6 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		NftClassCreated(T::AccountId, T::ClassId, ClassData, ByteVector),
 		IpfsNftMinted(T::AccountId, T::TokenId, ByteVector),
-		NftError(DispatchError),
 	}
 
 	#[pallet::call]
