@@ -161,8 +161,7 @@ the following:
 ### Pallets
 
 The runtime in this project is constructed using many FRAME pallets that ship with the
-[core Substrate repository](https://github.com/paritytech/substrate/tree/master/frame) and a
-pallet that is [defined in the `pallets`](./pallets/kitties/src/lib.rs) directory.
+[core Substrate repository](https://github.com/paritytech/substrate/tree/master/frame)
 
 A FRAME pallet is compromised of a number of blockchain primitives:
 

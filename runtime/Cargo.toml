@@ -46,7 +46,6 @@ sp-transaction-pool = { default-features = false, version = '3.0.0' }
 sp-version = { default-features = false, version = '3.0.0' }
 
 # local dependencies
-pallet-kitties = { default-features = false, path = '../pallets/kitties', version = '0.1.0' }
 pallet-nft = { default-features = false, path = '../pallets/nft', version = '0.1.0' }
 orml-nft = { version = "0.4.0", default-features = false }
 
@@ -59,7 +58,6 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'hex-literal',
     'pallet-balances/runtime-benchmarks',
-    'pallet-kitties/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
 ]
@@ -74,7 +72,6 @@ std = [
     'pallet-grandpa/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
-    'pallet-kitties/std',
     'pallet-nft/std',
     'orml-nft/std',
     'pallet-timestamp/std',
