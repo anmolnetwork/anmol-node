@@ -25,5 +25,8 @@
         "class_id": "ClassId",
         "token_data": "TokenData"
     },
-    "PendingNftOf": "PendingNft"
+    "PendingNftOf": "PendingNft",
+    "TokenByOwnerData": {
+        "percent_owned": "u8"
+    }
 }

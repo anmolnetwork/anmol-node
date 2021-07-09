@@ -114,6 +114,8 @@ pub mod module {
 		/// Can not destroy class
 		/// Total issuance is not 0
 		CannotDestroyClass,
+		/// Sender tried to send more ownership than they have
+		SenderInsufficientPercentage
 	}
 
 	/// Next available class ID.
@@ -243,8 +245,9 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		Tokens::<T>::try_mutate(token.0, token.1, |token_info| -> DispatchResult {
 			let mut info = token_info.as_mut().ok_or(Error::<T>::TokenNotFound)?;
+
 			ensure!(
-				info.owners.iter().any(|owner| owner == from),
+				info.owners.contains(from),
 				Error::<T>::NoPermission
 			);
 
@@ -253,19 +256,58 @@ impl<T: Config> Pallet<T> {
 				return Ok(());
 			}
 
-			info.owners = [to.clone()].to_vec();
-
-			#[cfg(not(feature = "disable-tokens-by-owner"))]
-			{
-				TokensByOwner::<T>::remove(from, token);
-				TokensByOwner::<T>::insert(
-					to,
-					token,
-					TokenByOwnerData {
-						percent_owned: percentage,
-					},
-				);
+			if !info.owners.contains(to) {
+				info.owners.push(to.clone());
 			}
+
+			// todo: check sender and recipient's existing ownership, add/substract to new values
+			TokensByOwner::<T>::try_mutate(from, token, |sender_token| -> DispatchResult {
+
+				// ensure sender owns enough to perform transaction
+				ensure!(
+					sender_token.percent_owned > percentage,
+					Error::<T>::SenderInsufficientPercentage
+				);
+
+				TokensByOwner::<T>::try_mutate(to, token, |recipient_token| -> DispatchResult {
+
+					// todo 
+
+					Ok(())
+				});
+
+
+				Ok(())
+			});
+
+			// TokensByOwner::<T>::insert(
+			// 	to,
+			// 	token,
+			// 	TokenByOwnerData {
+			// 		percent_owned: percentage,
+			// 	},
+			// );
+
+
+			// let combined_senders_ownership = senders_ownership - percentage;
+			// let combined_recipients_ownership = recipients_ownership + percentage;
+
+			// if combined_senders_ownership == 0 {
+			// 	TokensByOwner::<T>::remove(from, token);
+			// }
+
+
+			// #[cfg(not(feature = "disable-tokens-by-owner"))]
+			// {
+			// 	// TokensByOwner::<T>::remove(from, token);
+			// 	TokensByOwner::<T>::insert(
+			// 		to,
+			// 		token,
+			// 		TokenByOwnerData {
+			// 			percent_owned: percentage,
+			// 		},
+			// 	);
+			// }
 
 			Ok(())
 		})
@@ -317,7 +359,7 @@ impl<T: Config> Pallet<T> {
 		Tokens::<T>::try_mutate_exists(token.0, token.1, |token_info| -> DispatchResult {
 			let t = token_info.take().ok_or(Error::<T>::TokenNotFound)?;
 			ensure!(
-				t.owners.iter().any(|token_owner| *token_owner == *owner),
+				t.owners.contains(owner),
 				Error::<T>::NoPermission
 			);
 
