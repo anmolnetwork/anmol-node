@@ -263,12 +263,7 @@ impl<T: Config> Pallet<T> {
 			// todo: check sender and recipient's existing ownership, add/substract to new values
 			TokensByOwner::<T>::try_mutate(from, token, |sender_token| -> DispatchResult {
 				// handle possibly missing sender token
-				let mut debug_this = sender_token.as_mut().ok_or(Error::<T>::TokenNotFound)?;
-
-				match sender_token {
-					TokenByOwnerData => {},
-					_ => {}
-				}
+				let mut debug_this = sender_token.as_mut().ok_or(Error::<T>::SenderInsufficientPercentage)?;
 
 				// ensure sender owns enough to perform transaction
 				ensure!(
