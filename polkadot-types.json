@@ -8,7 +8,7 @@
     "ClassInfoOf": "ClassInfo",
     "TokenInfo": {
         "metadata": "Vec<u8>",
-        "owner": "AccountId",
+        "owners": "Vec<AccountId>",
         "data": "TokenData"
     },
     "TokenInfoOf": "TokenInfo",

@@ -145,6 +145,21 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2))]
+		pub fn transfer(
+			origin: OriginFor<T>,
+			from: T::AccountId,
+			to: T::AccountId,
+			token: (T::ClassId, T::TokenId),
+			percentage: u8,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+			
+			BaseNft::<T>::transfer(&from, &to, token, percentage)?;
+			
+			Ok(().into())
+		}
+
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn nft_request(
 			origin: OriginFor<T>,

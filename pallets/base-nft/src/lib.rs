@@ -30,6 +30,7 @@ use sp_runtime::{
 	DispatchError, DispatchResult, RuntimeDebug,
 };
 use sp_std::vec::Vec;
+use anmol_utils;
 
 mod mock;
 mod tests;
@@ -115,7 +116,9 @@ pub mod module {
 		/// Total issuance is not 0
 		CannotDestroyClass,
 		/// Sender tried to send more ownership than they have
-		SenderInsufficientPercentage
+		SenderInsufficientPercentage,
+		/// Wrong arguments
+		WrongAgruments,
 	}
 
 	/// Next available class ID.
@@ -236,76 +239,54 @@ impl<T: Config> Pallet<T> {
 		Ok(class_id)
 	}
 
-	/// Transfer NFT(non fungible token) from `from` account to `to` account
+	/// Transfer NFT(non fungible token) `from` account `to` account
 	pub fn transfer(
 		from: &T::AccountId,
 		to: &T::AccountId,
 		token: (T::ClassId, T::TokenId),
 		percentage: u8,
 	) -> DispatchResult {
+		if from == to {
+			return Ok(())
+		}
+
+		ensure!(percentage > 0, Error::<T>::WrongAgruments);
+
 		Tokens::<T>::try_mutate(token.0, token.1, |token_info| -> DispatchResult {
-			let mut info = token_info.as_mut().ok_or(Error::<T>::TokenNotFound)?;
+			let token_info_value = token_info.as_mut().ok_or(Error::<T>::TokenNotFound)?;
 
 			ensure!(
-				info.owners.contains(from),
+				token_info_value.owners.contains(from),
 				Error::<T>::NoPermission
 			);
 
-			if from == to {
-				// no change needed
-				return Ok(());
-			}
+			TokensByOwner::<T>::try_mutate_exists(from, token, |sender_token| -> DispatchResult {
+				let sender_token_value = sender_token.as_mut().ok_or(Error::<T>::SenderInsufficientPercentage)?;
 
-			if !info.owners.contains(to) {
-				info.owners.push(to.clone());
-			}
-
-			// todo: check sender and recipient's existing ownership, add/substract to new values
-			TokensByOwner::<T>::try_mutate(from, token, |sender_token| -> DispatchResult {
-				// handle possibly missing sender token
-				let mut debug_this = sender_token.as_mut().ok_or(Error::<T>::SenderInsufficientPercentage)?;
-
-				// ensure sender owns enough to perform transaction
 				ensure!(
-					sender_token.percent_owned > percentage,
+					sender_token_value.percent_owned >= percentage,
 					Error::<T>::SenderInsufficientPercentage
 				);
 
-				TokensByOwner::<T>::try_mutate(to, token, |recipient_token| -> DispatchResult {
-					let combined_senders_ownership = sender_token.percent_owned - percentage;
-					let combined_recipients_ownership = recipient_token.percent_owned + percentage;
+				sender_token_value.percent_owned -= percentage;
+				if sender_token_value.percent_owned == 0 {
+					// remove sender from TokensByOwner if precent_owned is 0
+					*sender_token = None;
+
+					// remove sender from token.owners
+					anmol_utils::remove_vector_item(&mut token_info_value.owners, from)?;
+				}
+
+				TokensByOwner::<T>::mutate(to, token, |recipient_token| -> DispatchResult {
+					recipient_token.percent_owned += percentage;
+
+					if !token_info_value.owners.contains(to) {
+						token_info_value.owners.push(to.clone());
+					}
+
 					Ok(())
-				});
-				Ok(())
-			});
-
-			// TokensByOwner::<T>::insert(
-			// 	to,
-			// 	token,
-			// 	TokenByOwnerData {
-			// 		percent_owned: percentage,
-			// 	},
-			// );
-
-
-			// if combined_senders_ownership == 0 {
-			// 	TokensByOwner::<T>::remove(from, token);
-			// }
-
-
-			// #[cfg(not(feature = "disable-tokens-by-owner"))]
-			// {
-			// 	// TokensByOwner::<T>::remove(from, token);
-			// 	TokensByOwner::<T>::insert(
-			// 		to,
-			// 		token,
-			// 		TokenByOwnerData {
-			// 			percent_owned: percentage,
-			// 		},
-			// 	);
-			// }
-
-			Ok(())
+				})
+			})
 		})
 	}
 
