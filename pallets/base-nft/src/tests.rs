@@ -116,10 +116,102 @@ fn transfer_should_fail() {
 			NonFungibleTokenModule::transfer(&ALICE, &BOB, (CLASS_ID, TOKEN_ID), 100),
 			Error::<Runtime>::NoPermission
 		);
+
 		assert_noop!(
 			NonFungibleTokenModule::mint(&BOB, CLASS_ID_NOT_EXIST, vec![1], ()),
 			Error::<Runtime>::ClassNotFound
 		);
+	});
+}
+
+#[test]
+fn same_account_transfers() {
+	ExtBuilder::default().build().execute_with(|| {
+		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
+
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&BOB,
+			(CLASS_ID, TOKEN_ID),
+			110
+		));
+	});
+}
+
+#[test]
+fn fractional_transfers_should_work() {
+	ExtBuilder::default().build().execute_with(|| {
+		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
+		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
+		assert_eq!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)), false);
+	});
+}
+
+#[test]
+fn fractional_transfers_should_fail() {
+	ExtBuilder::default().build().execute_with(|| {
+		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
+
+		assert_noop!(
+			NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 110),
+			Error::<Runtime>::SenderInsufficientPercentage
+		);
+
+
+	});
+}
+
+#[test]
+fn fractional_transfer_of_ownership() {
+	ExtBuilder::default().build().execute_with(|| {
+		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
+
+		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 20));
+		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+
+		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 80));
+		assert_eq!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)), false);
+		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+
+		assert_noop!(
+			NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 1),
+			Error::<Runtime>::SenderInsufficientPercentage
+		);
+	});
+}
+
+// transfer small percentages between accounts and check ownership along the way
+#[test]
+fn fractional_ownership_works() {
+	ExtBuilder::default().build().execute_with(|| {
+		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
+
+		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 20));
+		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+
+		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 10));
+		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+
+		assert_noop!(
+			NonFungibleTokenModule::transfer(&ALICE, &BOB, (CLASS_ID, TOKEN_ID), 50),
+			Error::<Runtime>::SenderInsufficientPercentage
+		);
+
+		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 70));
+		assert_eq!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)), false);
+		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+
+		assert_ok!(NonFungibleTokenModule::transfer(&ALICE, &BOB, (CLASS_ID, TOKEN_ID), 100));
+		assert_eq!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)), false);
+		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
 	});
 }
 
