@@ -21,6 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
+use anmol_utils;
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::*, Parameter};
 use sp_runtime::{
@@ -30,7 +31,6 @@ use sp_runtime::{
 	DispatchError, DispatchResult, RuntimeDebug,
 };
 use sp_std::vec::Vec;
-use anmol_utils;
 
 mod mock;
 mod tests;
@@ -247,7 +247,7 @@ impl<T: Config> Pallet<T> {
 		percentage: u8,
 	) -> DispatchResult {
 		if from == to {
-			return Ok(())
+			return Ok(());
 		}
 
 		ensure!(percentage > 0, Error::<T>::WrongAgruments);
@@ -261,7 +261,9 @@ impl<T: Config> Pallet<T> {
 			);
 
 			TokensByOwner::<T>::try_mutate_exists(from, token, |sender_token| -> DispatchResult {
-				let sender_token_value = sender_token.as_mut().ok_or(Error::<T>::SenderInsufficientPercentage)?;
+				let sender_token_value = sender_token
+					.as_mut()
+					.ok_or(Error::<T>::SenderInsufficientPercentage)?;
 
 				ensure!(
 					sender_token_value.percent_owned >= percentage,
@@ -335,10 +337,7 @@ impl<T: Config> Pallet<T> {
 	pub fn burn(owner: &T::AccountId, token: (T::ClassId, T::TokenId)) -> DispatchResult {
 		Tokens::<T>::try_mutate_exists(token.0, token.1, |token_info| -> DispatchResult {
 			let t = token_info.take().ok_or(Error::<T>::TokenNotFound)?;
-			ensure!(
-				t.owners.contains(owner),
-				Error::<T>::NoPermission
-			);
+			ensure!(t.owners.contains(owner), Error::<T>::NoPermission);
 
 			Classes::<T>::try_mutate(token.0, |class_info| -> DispatchResult {
 				let info = class_info.as_mut().ok_or(Error::<T>::ClassNotFound)?;

@@ -154,9 +154,9 @@ pub mod pallet {
 			percentage: u8,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-			
+
 			BaseNft::<T>::transfer(&from, &to, token, percentage)?;
-			
+
 			Ok(().into())
 		}
 

@@ -78,23 +78,26 @@ fn transfer_should_work() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
 		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
+
 		assert_ok!(NonFungibleTokenModule::transfer(
 			&BOB,
 			&BOB,
 			(CLASS_ID, TOKEN_ID),
 			75
 		));
+
 		assert_ok!(NonFungibleTokenModule::transfer(
 			&BOB,
 			&ALICE,
 			(CLASS_ID, TOKEN_ID),
 			25
 		));
+
 		assert_ok!(NonFungibleTokenModule::transfer(
 			&ALICE,
 			&BOB,
 			(CLASS_ID, TOKEN_ID),
-			50
+			25
 		));
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
 	});
@@ -106,20 +109,16 @@ fn transfer_should_fail() {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
 		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
 		assert_noop!(
-			NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID_NOT_EXIST), 30),
+			NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID_NOT_EXIST), 100),
 			Error::<Runtime>::TokenNotFound
 		);
 		assert_noop!(
-			NonFungibleTokenModule::transfer(&ALICE, &BOB, (CLASS_ID, TOKEN_ID), 40),
+			NonFungibleTokenModule::transfer(&ALICE, &BOB, (CLASS_ID, TOKEN_ID), 100),
 			Error::<Runtime>::NoPermission
 		);
 		assert_noop!(
 			NonFungibleTokenModule::mint(&BOB, CLASS_ID_NOT_EXIST, vec![1], ()),
 			Error::<Runtime>::ClassNotFound
-		);
-		assert_noop!(
-			NonFungibleTokenModule::transfer(&ALICE, &ALICE, (CLASS_ID, TOKEN_ID), 25),
-			Error::<Runtime>::NoPermission
 		);
 	});
 }
