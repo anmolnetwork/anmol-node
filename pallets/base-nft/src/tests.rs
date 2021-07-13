@@ -136,6 +136,19 @@ fn same_account_transfers() {
 			(CLASS_ID, TOKEN_ID),
 			110
 		));
+
+		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
+		assert_eq!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)), false);
+
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&BOB,
+			(CLASS_ID, TOKEN_ID),
+			70
+		));
+
+		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
+		assert_eq!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)), false);
 	});
 }
 
@@ -146,6 +159,14 @@ fn fractional_transfers_should_work() {
 		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
 		assert_eq!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)), false);
+
+		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 20));
+		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+
+		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 10));
+		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
 	});
 }
 
