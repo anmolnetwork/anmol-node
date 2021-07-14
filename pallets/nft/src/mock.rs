@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_nft;
 use frame_support::{debug, parameter_types};
 use frame_system::offchain::{

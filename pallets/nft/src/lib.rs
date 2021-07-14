@@ -2,19 +2,18 @@
 
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
-
 use orml_nft::Module as OrmlNft;
 pub use pallet::*;
-
 use sp_std::vec::Vec;
 
-#[cfg(test)]
 mod mock;
-
-#[cfg(test)]
 mod tests;
 
-pub type ByteVector = Vec<u8>;
+mod benchmarking;
+pub mod weights;
+pub use weights::WeightInfo;
+
+type ByteVector = Vec<u8>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -26,6 +25,7 @@ pub mod pallet {
 	{
 		type Call: From<Call<Self>>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
@@ -45,7 +45,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2))]
+		#[pallet::weight(T::WeightInfo::create_nft_class())]
 		pub fn create_nft_class(
 			origin: OriginFor<T>,
 			metadata: ByteVector,

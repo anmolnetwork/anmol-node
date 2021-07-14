@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate::mock::{Event, *};
 use frame_support::{assert_noop, assert_ok};
 
