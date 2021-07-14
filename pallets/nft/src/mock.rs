@@ -63,6 +63,7 @@ pub type AccountId = AccountId32;
 impl pallet_nft::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
+	type WeightInfo = pallet_nft::weights::SubstrateWeight<Runtime>;
 }
 
 impl orml_nft::Config for Runtime {
