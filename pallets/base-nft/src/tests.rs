@@ -125,7 +125,7 @@ fn transfer_should_fail() {
 }
 
 #[test]
-fn same_account_transfers() {
+fn same_account_transfers_noop() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
 		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
@@ -138,7 +138,10 @@ fn same_account_transfers() {
 		));
 
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert_eq!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)), false);
+		assert_eq!(
+			NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)),
+			false
+		);
 
 		assert_ok!(NonFungibleTokenModule::transfer(
 			&BOB,
@@ -148,7 +151,10 @@ fn same_account_transfers() {
 		));
 
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert_eq!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)), false);
+		assert_eq!(
+			NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)),
+			false
+		);
 	});
 }
 
@@ -158,15 +164,34 @@ fn fractional_transfers_should_work() {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
 		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert_eq!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)), false);
+		assert_eq!(
+			NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)),
+			false
+		);
 
-		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 20));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&ALICE,
+			(CLASS_ID, TOKEN_ID),
+			20
+		));
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(
+			&ALICE,
+			(CLASS_ID, TOKEN_ID)
+		));
 
-		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 10));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&ALICE,
+			(CLASS_ID, TOKEN_ID),
+			10
+		));
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(
+			&ALICE,
+			(CLASS_ID, TOKEN_ID)
+		));
 	});
 }
 
@@ -180,8 +205,6 @@ fn fractional_transfers_should_fail() {
 			NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 110),
 			Error::<Runtime>::SenderInsufficientPercentage
 		);
-
-
 	});
 }
 
@@ -191,13 +214,32 @@ fn fractional_transfer_of_ownership() {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
 		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
 
-		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 20));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&ALICE,
+			(CLASS_ID, TOKEN_ID),
+			20
+		));
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(
+			&ALICE,
+			(CLASS_ID, TOKEN_ID)
+		));
 
-		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 80));
-		assert_eq!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)), false);
-		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&ALICE,
+			(CLASS_ID, TOKEN_ID),
+			80
+		));
+		assert_eq!(
+			NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)),
+			false
+		);
+		assert!(NonFungibleTokenModule::is_owner(
+			&ALICE,
+			(CLASS_ID, TOKEN_ID)
+		));
 
 		assert_noop!(
 			NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 1),
@@ -213,25 +255,60 @@ fn fractional_ownership_works() {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
 		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
 
-		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 20));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&ALICE,
+			(CLASS_ID, TOKEN_ID),
+			20
+		));
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(
+			&ALICE,
+			(CLASS_ID, TOKEN_ID)
+		));
 
-		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 10));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&ALICE,
+			(CLASS_ID, TOKEN_ID),
+			10
+		));
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+		assert!(NonFungibleTokenModule::is_owner(
+			&ALICE,
+			(CLASS_ID, TOKEN_ID)
+		));
 
 		assert_noop!(
 			NonFungibleTokenModule::transfer(&ALICE, &BOB, (CLASS_ID, TOKEN_ID), 50),
 			Error::<Runtime>::SenderInsufficientPercentage
 		);
 
-		assert_ok!(NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 70));
-		assert_eq!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)), false);
-		assert!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)));
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&ALICE,
+			(CLASS_ID, TOKEN_ID),
+			70
+		));
+		assert_eq!(
+			NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)),
+			false
+		);
+		assert!(NonFungibleTokenModule::is_owner(
+			&ALICE,
+			(CLASS_ID, TOKEN_ID)
+		));
 
-		assert_ok!(NonFungibleTokenModule::transfer(&ALICE, &BOB, (CLASS_ID, TOKEN_ID), 100));
-		assert_eq!(NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)), false);
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&ALICE,
+			&BOB,
+			(CLASS_ID, TOKEN_ID),
+			100
+		));
+		assert_eq!(
+			NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)),
+			false
+		);
 		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
 	});
 }
