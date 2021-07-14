@@ -6,7 +6,7 @@ use frame_system::pallet_prelude::*;
 use orml_nft::Module as OrmlNft;
 pub use pallet::*;
 
-use sp_std::{vec::Vec};
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod mock;
@@ -55,9 +55,7 @@ pub mod pallet {
 			let class_id =
 				OrmlNft::<T>::create_class(&account_id, metadata.clone(), Default::default())?;
 
-			Self::deposit_event(Event::NftClassCreated(
-				account_id, class_id, metadata,
-			));
+			Self::deposit_event(Event::NftClassCreated(account_id, class_id, metadata));
 			Ok(().into())
 		}
 
