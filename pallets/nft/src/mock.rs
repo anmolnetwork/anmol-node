@@ -68,8 +68,8 @@ impl pallet_nft::Config for Runtime {
 impl orml_nft::Config for Runtime {
 	type ClassId = u32;
 	type TokenId = u32;
-	type ClassData = pallet_nft::ClassData;
-	type TokenData = pallet_nft::TokenData;
+	type ClassData = ();
+	type TokenData = ();
 }
 
 pub type SignedExtra = (
