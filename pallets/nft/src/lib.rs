@@ -6,9 +6,7 @@ use frame_system::pallet_prelude::*;
 use orml_nft::Module as OrmlNft;
 pub use pallet::*;
 
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use sp_std::{cmp::Ordering, vec::Vec};
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod mock;
@@ -18,42 +16,13 @@ mod tests;
 
 pub type ByteVector = Vec<u8>;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Ord)]
-pub struct PendingNft<AccountId, ClassId> {
-	account_id: AccountId,
-	class_id: ClassId,
-	token_data: TokenData,
-}
-
-impl<AccountId, ClassId> PartialOrd for PendingNft<AccountId, ClassId>
-where
-	AccountId: Ord,
-	ClassId: Ord,
-{
-	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-		Some(self.cmp(other))
-	}
-}
-
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
-pub struct ClassData {
-	// To be expanded
-}
-
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, PartialOrd, Ord)]
-pub struct TokenData {
-	// To be expanded
-}
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + orml_nft::Config<TokenData = TokenData, ClassData = ClassData>
+		frame_system::Config + orml_nft::Config<TokenData = (), ClassData = ()>
 	{
 		type Call: From<Call<Self>>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -70,7 +39,7 @@ pub mod pallet {
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		NftClassCreated(T::AccountId, T::ClassId, ClassData, ByteVector),
+		NftClassCreated(T::AccountId, T::ClassId, ByteVector),
 		IpfsNftMinted(T::AccountId, T::TokenId, ByteVector),
 	}
 
@@ -83,13 +52,10 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
-			let class_data = ClassData {}; // TODO: To be expanded
 			let class_id =
-				OrmlNft::<T>::create_class(&account_id, metadata.clone(), class_data.clone())?;
+				OrmlNft::<T>::create_class(&account_id, metadata.clone(), Default::default())?;
 
-			Self::deposit_event(Event::NftClassCreated(
-				account_id, class_id, class_data, metadata,
-			));
+			Self::deposit_event(Event::NftClassCreated(account_id, class_id, metadata));
 			Ok(().into())
 		}
 

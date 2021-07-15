@@ -17,7 +17,6 @@ fn mint_ipfs_nft_works() {
 		let event = Event::pallet_nft(crate::Event::NftClassCreated(
 			ALICE,
 			CLASS_ID_IPFS_NFT,
-			Default::default(),
 			vec![1],
 		));
 		assert_eq!(last_event(), event);
