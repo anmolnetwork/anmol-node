@@ -8,7 +8,7 @@ keystore-add:
 code-prettier:
 	cargo fmt
 
-build-benchmarks:
+benchmarks-build:
 	cargo build --release --manifest-path node/Cargo.toml --features runtime-benchmarks
 benchmarks-generate:
 	./target/release/anmol benchmark \
@@ -18,3 +18,8 @@ benchmarks-generate:
 		--execution wasm \
 		--wasm-execution compiled \
 		--template=./.maintain/frame-weight-template.hbs \
+		--steps 50 \
+		--repeat 20 \
+
+test:
+	cargo test -p pallet-nft --all-features

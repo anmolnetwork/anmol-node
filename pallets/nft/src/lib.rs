@@ -2,7 +2,7 @@
 
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
-use orml_nft::Module as OrmlNft;
+use orml_nft::Pallet as OrmlNft;
 pub use pallet::*;
 use sp_std::vec::Vec;
 
@@ -48,34 +48,45 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::create_nft_class())]
 		pub fn create_nft_class(
 			origin: OriginFor<T>,
-			metadata: ByteVector,
+			ipfs_cid_metadata: ByteVector,
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
-			let class_id =
-				OrmlNft::<T>::create_class(&account_id, metadata.clone(), Default::default())?;
+			let class_id = OrmlNft::<T>::create_class(
+				&account_id,
+				ipfs_cid_metadata.clone(),
+				Default::default(),
+			)?;
 
-			Self::deposit_event(Event::NftClassCreated(account_id, class_id, metadata));
+			Self::deposit_event(Event::NftClassCreated(
+				account_id,
+				class_id,
+				ipfs_cid_metadata,
+			));
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(0, 0))]
+		#[pallet::weight(T::WeightInfo::create_nft_class())]
 		pub fn mint_ipfs_nft(
 			origin: OriginFor<T>,
-			ipfs_cid: ByteVector,
+			ipfs_cid_metadata: ByteVector,
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
 			let token_id = OrmlNft::<T>::mint(
 				&account_id,
 				0_u32.into(), // TODO: Replace with enum NftClassId.IpfsNft
-				ipfs_cid.clone(),
+				ipfs_cid_metadata.clone(),
 				Default::default(),
 			)?;
 
-			debug::info!("--- IPFS NFT minted: {:?}", ipfs_cid);
+			debug::info!("--- IPFS NFT minted: {:?}", ipfs_cid_metadata);
 
-			Self::deposit_event(Event::IpfsNftMinted(account_id, token_id, ipfs_cid));
+			Self::deposit_event(Event::IpfsNftMinted(
+				account_id,
+				token_id,
+				ipfs_cid_metadata,
+			));
 			Ok(().into())
 		}
 	}
