@@ -15,6 +15,8 @@ pub use weights::WeightInfo;
 
 type ByteVector = Vec<u8>;
 
+pub const MAX_IPFS_CID_CHAR_LENGTH: usize = 200;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -33,7 +35,9 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::error]
-	pub enum Error<T> {}
+	pub enum Error<T> {
+		MaxIpfsCidCharLength,
+	}
 
 	#[pallet::event]
 	#[pallet::metadata(T::AccountId = "AccountId")]
@@ -52,6 +56,11 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
+			ensure!(
+				ipfs_cid_metadata.len() < MAX_IPFS_CID_CHAR_LENGTH,
+				Error::<T>::MaxIpfsCidCharLength
+			);
+
 			let class_id = OrmlNft::<T>::create_class(
 				&account_id,
 				ipfs_cid_metadata.clone(),
@@ -66,12 +75,17 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(T::WeightInfo::create_nft_class())]
+		#[pallet::weight(T::WeightInfo::mint_ipfs_nft())]
 		pub fn mint_ipfs_nft(
 			origin: OriginFor<T>,
 			ipfs_cid_metadata: ByteVector,
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
+
+			ensure!(
+				ipfs_cid_metadata.len() < MAX_IPFS_CID_CHAR_LENGTH,
+				Error::<T>::MaxIpfsCidCharLength
+			);
 
 			let token_id = OrmlNft::<T>::mint(
 				&account_id,
