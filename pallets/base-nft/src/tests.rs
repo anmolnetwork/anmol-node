@@ -243,7 +243,7 @@ fn fractional_transfer_of_ownership() {
 
 		assert_noop!(
 			NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID), 1),
-			Error::<Runtime>::SenderInsufficientPercentage
+			Error::<Runtime>::NoPermission
 		);
 	});
 }

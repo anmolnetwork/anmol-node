@@ -118,7 +118,7 @@ pub mod module {
 		/// Sender tried to send more ownership than they have
 		SenderInsufficientPercentage,
 		/// Wrong arguments
-		WrongAgruments,
+		WrongArguments,
 	}
 
 	/// Next available class ID.
@@ -250,7 +250,7 @@ impl<T: Config> Pallet<T> {
 			return Ok(());
 		}
 
-		ensure!(percentage > 0, Error::<T>::WrongAgruments);
+		ensure!(percentage > 0, Error::<T>::WrongArguments);
 
 		Tokens::<T>::try_mutate(token.0, token.1, |token_info| -> DispatchResult {
 			let token_info_value = token_info.as_mut().ok_or(Error::<T>::TokenNotFound)?;
@@ -274,18 +274,19 @@ impl<T: Config> Pallet<T> {
 				if sender_token_value.percent_owned == 0 {
 					// remove sender from TokensByOwner if precent_owned is 0
 					*sender_token = None;
-
 					// remove sender from token.owners
 					anmol_utils::remove_vector_item(&mut token_info_value.owners, from)?;
 				}
 
 				TokensByOwner::<T>::mutate(to, token, |recipient_token| -> DispatchResult {
 					recipient_token.percent_owned += percentage;
-
-					if !token_info_value.owners.contains(to) {
-						token_info_value.owners.push(to.clone());
+					match token_info_value.owners.binary_search(&to) {
+						Ok(_) => {}
+						Err(pos) => {
+							let owners_token = to.clone();
+							token_info_value.owners.insert(pos, owners_token)
+						}
 					}
-
 					Ok(())
 				})
 			})
