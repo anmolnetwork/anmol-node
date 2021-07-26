@@ -2,19 +2,20 @@
 
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 use frame_system::pallet_prelude::*;
-
-use orml_nft::Module as OrmlNft;
+use orml_nft::Pallet as OrmlNft;
 pub use pallet::*;
-
 use sp_std::vec::Vec;
 
-#[cfg(test)]
 mod mock;
-
-#[cfg(test)]
 mod tests;
 
-pub type ByteVector = Vec<u8>;
+mod benchmarking;
+pub mod weights;
+pub use weights::WeightInfo;
+
+type ByteVector = Vec<u8>;
+
+pub const MAX_IPFS_CID_CHAR_LENGTH: usize = 200;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -26,6 +27,7 @@ pub mod pallet {
 	{
 		type Call: From<Call<Self>>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
@@ -33,7 +35,9 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::error]
-	pub enum Error<T> {}
+	pub enum Error<T> {
+		MaxIpfsCidCharLength,
+	}
 
 	#[pallet::event]
 	#[pallet::metadata(T::AccountId = "AccountId")]
@@ -45,37 +49,58 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2))]
+		#[pallet::weight(T::WeightInfo::create_nft_class())]
 		pub fn create_nft_class(
 			origin: OriginFor<T>,
-			metadata: ByteVector,
+			ipfs_cid_metadata: ByteVector,
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
-			let class_id =
-				OrmlNft::<T>::create_class(&account_id, metadata.clone(), Default::default())?;
+			ensure!(
+				ipfs_cid_metadata.len() < MAX_IPFS_CID_CHAR_LENGTH,
+				Error::<T>::MaxIpfsCidCharLength
+			);
 
-			Self::deposit_event(Event::NftClassCreated(account_id, class_id, metadata));
+			let class_id = OrmlNft::<T>::create_class(
+				&account_id,
+				ipfs_cid_metadata.clone(),
+				Default::default(),
+			)?;
+
+			Self::deposit_event(Event::NftClassCreated(
+				account_id,
+				class_id,
+				ipfs_cid_metadata,
+			));
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(0, 0))]
+		#[pallet::weight(T::WeightInfo::mint_ipfs_nft())]
 		pub fn mint_ipfs_nft(
 			origin: OriginFor<T>,
-			ipfs_cid: ByteVector,
+			ipfs_cid_metadata: ByteVector,
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
+
+			ensure!(
+				ipfs_cid_metadata.len() < MAX_IPFS_CID_CHAR_LENGTH,
+				Error::<T>::MaxIpfsCidCharLength
+			);
 
 			let token_id = OrmlNft::<T>::mint(
 				&account_id,
 				0_u32.into(), // TODO: Replace with enum NftClassId.IpfsNft
-				ipfs_cid.clone(),
+				ipfs_cid_metadata.clone(),
 				Default::default(),
 			)?;
 
-			debug::info!("--- IPFS NFT minted: {:?}", ipfs_cid);
+			debug::info!("--- IPFS NFT minted: {:?}", ipfs_cid_metadata);
 
-			Self::deposit_event(Event::IpfsNftMinted(account_id, token_id, ipfs_cid));
+			Self::deposit_event(Event::IpfsNftMinted(
+				account_id,
+				token_id,
+				ipfs_cid_metadata,
+			));
 			Ok(().into())
 		}
 	}
