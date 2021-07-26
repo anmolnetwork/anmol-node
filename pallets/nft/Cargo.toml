@@ -24,7 +24,7 @@ sp-core = { default-features = false, version = '3.0.0' }
 base-nft = { version = "0.1.0", default-features = false, path = '../base-nft' }
 
 [dev-dependencies]
-sp-io = { default-features = false, version = '3.0.0' }
+
 
 [features]
 default = ['std']
@@ -38,6 +38,7 @@ std = [
 	'sp-runtime/std',
 	'sp-core/std',
 	'base-nft/std',
+
 ]
 runtime-benchmarks = [
 	'frame-benchmarking',

@@ -274,12 +274,7 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-impl pallet_kitties::Config for Runtime {
-	type Event = Event;
-}
-
 impl pallet_nft::Config for Runtime {
-	type AuthorityId = pallet_nft::crypto::TestAuthId;
 	type Call = Call;
 	type Event = Event;
 }
@@ -287,8 +282,8 @@ impl pallet_nft::Config for Runtime {
 impl base_nft::Config for Runtime {
 	type ClassId = u32;
 	type TokenId = u32;
-	type ClassData = pallet_nft::ClassData;
-	type TokenData = pallet_nft::TokenData;
+	type ClassData = ();
+	type TokenData = ();
 }
 
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
@@ -364,7 +359,6 @@ construct_runtime!(
 		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
-		KittiesModule: pallet_kitties::{Module, Call, Storage, Event<T>},
 		NftModule: pallet_nft::{Module, Call, Storage, Event<T>},
 		BaseNft: base_nft::{Module, Storage},
 	}
@@ -562,7 +556,6 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_kitties, KittiesModule);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
