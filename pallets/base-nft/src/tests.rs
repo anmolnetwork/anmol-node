@@ -74,57 +74,6 @@ fn mint_should_fail() {
 }
 
 #[test]
-fn transfer_should_work() {
-	ExtBuilder::default().build().execute_with(|| {
-		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
-
-		assert_ok!(NonFungibleTokenModule::transfer(
-			&BOB,
-			&BOB,
-			(CLASS_ID, TOKEN_ID),
-			75
-		));
-
-		assert_ok!(NonFungibleTokenModule::transfer(
-			&BOB,
-			&ALICE,
-			(CLASS_ID, TOKEN_ID),
-			25
-		));
-
-		assert_ok!(NonFungibleTokenModule::transfer(
-			&ALICE,
-			&BOB,
-			(CLASS_ID, TOKEN_ID),
-			25
-		));
-		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-	});
-}
-
-#[test]
-fn transfer_should_fail() {
-	ExtBuilder::default().build().execute_with(|| {
-		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
-		assert_noop!(
-			NonFungibleTokenModule::transfer(&BOB, &ALICE, (CLASS_ID, TOKEN_ID_NOT_EXIST), 100),
-			Error::<Runtime>::TokenNotFound
-		);
-		assert_noop!(
-			NonFungibleTokenModule::transfer(&ALICE, &BOB, (CLASS_ID, TOKEN_ID), 100),
-			Error::<Runtime>::NoPermission
-		);
-
-		assert_noop!(
-			NonFungibleTokenModule::mint(&BOB, CLASS_ID_NOT_EXIST, vec![1], ()),
-			Error::<Runtime>::ClassNotFound
-		);
-	});
-}
-
-#[test]
 fn same_account_transfers_noop() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
@@ -155,43 +104,6 @@ fn same_account_transfers_noop() {
 			NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)),
 			false
 		);
-	});
-}
-
-#[test]
-fn fractional_transfers_should_work() {
-	ExtBuilder::default().build().execute_with(|| {
-		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
-		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
-		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert_eq!(
-			NonFungibleTokenModule::is_owner(&ALICE, (CLASS_ID, TOKEN_ID)),
-			false
-		);
-
-		assert_ok!(NonFungibleTokenModule::transfer(
-			&BOB,
-			&ALICE,
-			(CLASS_ID, TOKEN_ID),
-			20
-		));
-		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert!(NonFungibleTokenModule::is_owner(
-			&ALICE,
-			(CLASS_ID, TOKEN_ID)
-		));
-
-		assert_ok!(NonFungibleTokenModule::transfer(
-			&BOB,
-			&ALICE,
-			(CLASS_ID, TOKEN_ID),
-			10
-		));
-		assert!(NonFungibleTokenModule::is_owner(&BOB, (CLASS_ID, TOKEN_ID)));
-		assert!(NonFungibleTokenModule::is_owner(
-			&ALICE,
-			(CLASS_ID, TOKEN_ID)
-		));
 	});
 }
 
