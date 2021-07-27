@@ -72,9 +72,9 @@ pub mod module {
 		/// The token ID type
 		type TokenId: Parameter + Member + AtLeast32BitUnsigned + Default + Copy;
 		/// The class properties type
-		type ClassData: Parameter + Member + MaybeSerializeDeserialize;
+		type ClassData: Parameter + Member + MaybeSerializeDeserialize + Default;
 		/// The token properties type
-		type TokenData: Parameter + Member + MaybeSerializeDeserialize;
+		type TokenData: Parameter + Member + MaybeSerializeDeserialize + Default;
 	}
 
 	pub type ClassInfoOf<T> = ClassInfo<
