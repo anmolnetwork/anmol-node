@@ -47,8 +47,6 @@ use frame_system::offchain::{
 };
 
 pub use base_nft;
-/// Import the kitties pallet.
-pub use pallet_kitties;
 pub use pallet_nft;
 
 /// An index to a block.

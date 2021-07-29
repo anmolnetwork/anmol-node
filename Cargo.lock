@@ -171,6 +171,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "anmol-utils"
+version = "0.1.0"
+dependencies = [
+ "sp-std",
+]
+
+[[package]]
 name = "ansi_term"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -459,6 +466,7 @@ dependencies = [
 name = "base-nft"
 version = "0.1.0"
 dependencies = [
+ "anmol-utils",
  "frame-support",
  "frame-system",
  "funty",

@@ -21,6 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
+use anmol_utils;
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::*, Parameter};
 use sp_runtime::{
@@ -53,7 +54,7 @@ pub struct TokenInfo<AccountId, Data> {
 	/// Token metadata
 	pub metadata: Vec<u8>,
 	/// Token owner
-	pub owner: AccountId,
+	pub owners: Vec<AccountId>,
 	/// Token Properties
 	pub data: Data,
 }
@@ -71,9 +72,9 @@ pub mod module {
 		/// The token ID type
 		type TokenId: Parameter + Member + AtLeast32BitUnsigned + Default + Copy;
 		/// The class properties type
-		type ClassData: Parameter + Member + MaybeSerializeDeserialize;
+		type ClassData: Parameter + Member + MaybeSerializeDeserialize + Default;
 		/// The token properties type
-		type TokenData: Parameter + Member + MaybeSerializeDeserialize;
+		type TokenData: Parameter + Member + MaybeSerializeDeserialize + Default;
 	}
 
 	pub type ClassInfoOf<T> = ClassInfo<
@@ -114,6 +115,10 @@ pub mod module {
 		/// Can not destroy class
 		/// Total issuance is not 0
 		CannotDestroyClass,
+		/// Sender tried to send more ownership than they have
+		SenderInsufficientPercentage,
+		/// Wrong arguments
+		WrongArguments,
 	}
 
 	/// Next available class ID.
@@ -142,6 +147,11 @@ pub mod module {
 	pub type Tokens<T: Config> =
 		StorageDoubleMap<_, Twox64Concat, T::ClassId, Twox64Concat, T::TokenId, TokenInfoOf<T>>;
 
+	#[derive(Default, Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
+	pub struct TokenByOwnerData {
+		pub percent_owned: u8,
+	}
+
 	/// Token existence check by owner and class ID.
 	// TODO: pallet macro doesn't support conditional compiling. Always having `TokensByOwner` storage doesn't hurt but
 	// it could be removed once conditional compiling supported.
@@ -154,7 +164,7 @@ pub mod module {
 		T::AccountId,
 		Twox64Concat,
 		(T::ClassId, T::TokenId),
-		(),
+		TokenByOwnerData,
 		ValueQuery,
 	>;
 
@@ -229,29 +239,54 @@ impl<T: Config> Pallet<T> {
 		Ok(class_id)
 	}
 
-	/// Transfer NFT(non fungible token) from `from` account to `to` account
+	/// Transfer NFT(non fungible token) `from` account `to` account
 	pub fn transfer(
 		from: &T::AccountId,
 		to: &T::AccountId,
 		token: (T::ClassId, T::TokenId),
+		percentage: u8,
 	) -> DispatchResult {
+		if from == to {
+			return Ok(());
+		}
+
+		ensure!(percentage > 0, Error::<T>::WrongArguments);
+
 		Tokens::<T>::try_mutate(token.0, token.1, |token_info| -> DispatchResult {
-			let mut info = token_info.as_mut().ok_or(Error::<T>::TokenNotFound)?;
-			ensure!(info.owner == *from, Error::<T>::NoPermission);
-			if from == to {
-				// no change needed
-				return Ok(());
-			}
+			let token_info_value = token_info.as_mut().ok_or(Error::<T>::TokenNotFound)?;
 
-			info.owner = to.clone();
+			ensure!(
+				token_info_value.owners.contains(from),
+				Error::<T>::NoPermission
+			);
 
-			#[cfg(not(feature = "disable-tokens-by-owner"))]
-			{
-				TokensByOwner::<T>::remove(from, token);
-				TokensByOwner::<T>::insert(to, token, ());
-			}
+			TokensByOwner::<T>::try_mutate_exists(from, token, |sender_token| -> DispatchResult {
+				let sender_token_value = sender_token
+					.as_mut()
+					.ok_or(Error::<T>::SenderInsufficientPercentage)?;
 
-			Ok(())
+				ensure!(
+					sender_token_value.percent_owned >= percentage,
+					Error::<T>::SenderInsufficientPercentage
+				);
+
+				sender_token_value.percent_owned -= percentage;
+				if sender_token_value.percent_owned == 0 {
+					// remove sender from TokensByOwner if precent_owned is 0
+					*sender_token = None;
+					// remove sender from token.owners
+					anmol_utils::remove_vector_item(&mut token_info_value.owners, from)?;
+				}
+
+				TokensByOwner::<T>::mutate(to, token, |recipient_token| -> DispatchResult {
+					recipient_token.percent_owned += percentage;
+					if let Err(pos) = token_info_value.owners.binary_search(&to) {
+						let owners_token = to.clone();
+						token_info_value.owners.insert(pos, owners_token)
+					}
+					Ok(())
+				})
+			})
 		})
 	}
 
@@ -279,12 +314,18 @@ impl<T: Config> Pallet<T> {
 
 			let token_info = TokenInfo {
 				metadata,
-				owner: owner.clone(),
+				owners: [owner.clone()].to_vec(),
 				data,
 			};
+
 			Tokens::<T>::insert(class_id, token_id, token_info);
 			#[cfg(not(feature = "disable-tokens-by-owner"))]
-			TokensByOwner::<T>::insert(owner, (class_id, token_id), ());
+			TokensByOwner::<T>::insert(
+				owner,
+				(class_id, token_id),
+				// By default, minter gets 100% ownership
+				TokenByOwnerData { percent_owned: 100 },
+			);
 
 			Ok(token_id)
 		})
@@ -294,7 +335,7 @@ impl<T: Config> Pallet<T> {
 	pub fn burn(owner: &T::AccountId, token: (T::ClassId, T::TokenId)) -> DispatchResult {
 		Tokens::<T>::try_mutate_exists(token.0, token.1, |token_info| -> DispatchResult {
 			let t = token_info.take().ok_or(Error::<T>::TokenNotFound)?;
-			ensure!(t.owner == *owner, Error::<T>::NoPermission);
+			ensure!(t.owners.contains(owner), Error::<T>::NoPermission);
 
 			Classes::<T>::try_mutate(token.0, |class_info| -> DispatchResult {
 				let info = class_info.as_mut().ok_or(Error::<T>::ClassNotFound)?;
