@@ -1,14 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use base_nft::Module as BaseNft;
-use frame_support::{
-	dispatch::DispatchResultWithPostInfo,
-	pallet_prelude::*,
-};
-use frame_system::{
-	offchain::CreateSignedTransaction,
-	pallet_prelude::*,
-};
+use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+use frame_system::{offchain::CreateSignedTransaction, pallet_prelude::*};
 
 pub use pallet::*;
 use sp_std::vec::Vec;

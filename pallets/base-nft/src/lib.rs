@@ -280,12 +280,9 @@ impl<T: Config> Pallet<T> {
 
 				TokensByOwner::<T>::mutate(to, token, |recipient_token| -> DispatchResult {
 					recipient_token.percent_owned += percentage;
-					match token_info_value.owners.binary_search(&to) {
-						Ok(_) => {}
-						Err(pos) => {
-							let owners_token = to.clone();
-							token_info_value.owners.insert(pos, owners_token)
-						}
+					if let Err(pos) = token_info_value.owners.binary_search(&to) {
+						let owners_token = to.clone();
+						token_info_value.owners.insert(pos, owners_token)
 					}
 					Ok(())
 				})
