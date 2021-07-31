@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_nft;
 use frame_support::{debug, parameter_types};
 use frame_system::offchain::{
@@ -61,6 +63,7 @@ pub type AccountId = AccountId32;
 impl pallet_nft::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
+	type WeightInfo = pallet_nft::weights::SubstrateWeight<Runtime>;
 }
 
 impl base_nft::Config for Runtime {
