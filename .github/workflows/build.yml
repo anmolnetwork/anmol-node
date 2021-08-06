@@ -7,26 +7,27 @@ on:
 
 jobs:
   build-anmol:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Build docker images
-      env:
-        DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
-        DOCKER_PW: ${{ secrets.DOCKER_PASSWORD }}
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # login to dockerhub registry
-        docker login --username "$DOCKER_USER" --password "$DOCKER_PASSWORD"
-        # Build base image
-        docker build . -f Dockerfile.build -t anmol-build
-        docker tag anmol-build anmolnetwork/anmol-node-build-test:latest
-        docker push anmolnetwork/anmol-node-build-test:latest
+        # Checkout code
+      - uses: actions/checkout@v2
 
-        # build prod image
-        docker build . -f Dockerfile -t anmol
-        docker tag anmol anmolnetwork/anmol-node-test:latest
-        docker push anmolnetwork/anmol-node-test:latest
-        # next: step to push last image tag to elasticbeanstalk
+      - name: Build docker images
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+          DOCKER_PW: ${{ secrets.DOCKER_PASSWORD }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # login to dockerhub registry
+          docker login --username "$DOCKER_USER" --password "$DOCKER_PASSWORD"
+          # Build base image
+          docker build . -f Dockerfile.build -t anmol-build
+          docker tag anmol-build anmolnetwork/anmol-node-build-test:latest
+          docker push anmolnetwork/anmol-node-build-test:latest
+
+          # build prod image
+          docker build . -f Dockerfile -t anmol
+          docker tag anmol anmolnetwork/anmol-node-test:latest
+          docker push anmolnetwork/anmol-node-test:latest
+          # next: step to push last image tag to elasticbeanstalk
