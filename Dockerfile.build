@@ -1,0 +1,73 @@
+# Dockerfile with everything needed for local development
+# and creating a base image for production builds
+
+FROM rust:latest
+
+WORKDIR '/app'
+
+# metadata
+ARG VCS_REF
+ARG BUILD_DATE
+
+# install tools and dependencies
+RUN apt-get update && \
+	DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get install -y \
+		libssl1.1 \
+		ca-certificates \
+		curl && \
+# apt cleanup
+	apt-get autoremove -y && \
+	apt-get clean && \
+	find /var/lib/apt/lists/ -type f -not -name lock -delete;
+
+
+ARG USERNAME=anmol
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+COPY . .
+
+RUN chown -R $USER_UID:$USER_GID ./ \
+	&& groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} -s /bin/bash -m ${USERNAME} \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
+    && chmod 0440 /etc/sudoers.d/${USERNAME} \
+    && mkdir -p /builds/target /home/${USERNAME}/.vscode-server/extensions \
+    && chown -R ${USERNAME}:${USERNAME} /builds /home/${USERNAME}/.vscode-server \
+	&& rm -rf target \
+	&& apt-get dist-upgrade -y -o Dpkg::Options::="--force-confold" \
+	&& apt-get install -y cmake pkg-config libssl-dev git clang   \
+	&& rustup toolchain install nightly \
+	&& rustup target add wasm32-unknown-unknown --toolchain nightly \ 
+	&& rustup component add rustfmt
+
+
+# # 	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confold" && \
+# # 	apt-get install -y cmake pkg-config libssl-dev git clang
+
+# RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh \
+# # RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+	# rustup toolchain install nightly && \
+	# rustup target add wasm32-unknown-unknown --toolchain nightly && \
+# 	rustup default stable 
+# 	# && \
+# 	# cargo build "--$PROFILE"
+
+# RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs - y | sh
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+RUN export PATH="$PATH:$HOME/.cargo/bin"
+
+# RUN rustup toolchain install nightly
+# RUN rustup target add wasm32-unknown-unknown --toolchain nightly
+# RUN rustup default stable 
+	# && \
+	# cargo build "--$PROFILE"
+
+USER ${USERNAME}:${USERNAME}
+
+# VOLUME [ "/builds/target", "/home/${USERNAME}/.vscode-server/extensions" ]
+
