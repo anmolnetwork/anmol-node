@@ -9,6 +9,7 @@ jobs:
   build-anmol:
     runs-on: ubuntu-18.04
     steps:
+    - uses: actions/checkout@v2
     - name: Build 'build' image
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
@@ -16,8 +17,6 @@ jobs:
           DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
         env:
           DOCKER_PW: ${{ secrets.DOCKER_PASSWORD }}
-      # checkout repo
-      uses: actions/checkout@v2
       run: | 
         # login to dockerhub registry
         docker login --username "$DOCKER_USER" --password "$DOCKER_PASSWORD"
@@ -26,7 +25,6 @@ jobs:
         docker push anmolnetwork/anmol-node-build-test:latest
 
     - name: Build prod image
-      uses: actions/checkout@v2
       with:
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
         env:
