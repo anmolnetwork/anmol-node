@@ -71,3 +71,4 @@ USER ${USERNAME}:${USERNAME}
 
 # VOLUME [ "/builds/target", "/home/${USERNAME}/.vscode-server/extensions" ]
 
+RUN cargo build --release
