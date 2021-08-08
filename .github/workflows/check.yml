@@ -7,9 +7,6 @@ on:
   push:
     branches: [ master, ibtida ]
   pull_request:
-  
-    # Temporarily disable on branch frevert/feature/docker-images for github workflow testing
-    branches-ignore: [ frevert/feature/docker-images ]
     branches: [ master, ibtida ]
 
   # Allows you to run this workflow manually from the Actions tab
