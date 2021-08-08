@@ -4,4 +4,4 @@ RUN cargo build --release
 FROM alpine:3.14.0 AS prod
 WORKDIR /pkg
 COPY --from=build_stage . .
-CMD [ "cargo", "build", "--release" ]
+CMD [ "./target/release/anmol"]
