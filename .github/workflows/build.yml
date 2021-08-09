@@ -2,8 +2,7 @@ name: Build Anmol
 
 on:
   push:
-    # branches: [ master, ibtida ]
-    branches: [ frevert/feature/docker-images ]
+    branches: [ master, ibtida ]
   workflow_dispatch:
 
 jobs:
