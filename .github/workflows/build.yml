@@ -9,23 +9,80 @@ jobs:
   build-anmol:
     runs-on: ubuntu-20.04
     steps:
-        # Checkout code
-      - uses: actions/checkout@v2
-
-      - name: Build docker images
-        env:
-          DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set testnet env
+        if: endsWith(github.ref, '/ibtida')
         run: |
-          # login to dockerhub registry
-          docker login --username "$DOCKER_USER" --password "$DOCKER_PASSWORD"
-          # Build base image
-          docker build . -f Dockerfile.build -t anmol-build
-          docker tag anmol-build anmolnetwork/anmol-node-build-test:latest
-          docker push anmolnetwork/anmol-node-build-test:latest
+          echo "ENVIRONMENT=testnet" >> $GITHUB_ENV
+      - name: Set production env
+        if: endsWith(github.ref, '/master')
+        run: |
+        echo "ENVIRONMENT=production" >> $GITHUB_ENV
 
-          # build prod image
-          docker build . -f Dockerfile -t anmol
-          docker tag anmol anmolnetwork/anmol-node-test:latest
-          docker push anmolnetwork/anmol-node-test:latest
-          # next: step to push last image tag to elasticbeanstalk
+      - name: Set debug env
+        if: endsWith(github.ref, '/frevert/feature/docker-images')
+        run: |
+        echo "ENVIRONMENT=test" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USER_NAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push base image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.build
+          push: true
+          tags: anmolnetwork/anmol-node-build-test:${{ env.TAG }}-latest
+          cache-from: type=local,src=/tmp/.buildx-cache-base
+          cache-to: type=local,dest=/tmp/.buildx-cache-base-new
+
+      - name: Build and push prod image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: anmolnetwork/anmol-node-test:${{ env.TAG }}-latest
+          cache-from: type=local,src=/tmp/.buildx-cache-prod
+          cache-to: type=local,dest=/tmp/.buildx-cache--prod-new
+
+        # This ugly bit is necessary if you don't want your cache to grow forever
+        # till it hits GitHub's limit of 5GB.
+        # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      # - name: Build docker images
+      #   run: |
+
+      #     # Build base image
+      #     docker build . -f Dockerfile.build -t anmol-build
+          # docker tag anmol-build anmolnetwork/anmol-node-build-test:latest
+      #     docker push anmolnetwork/anmol-node-build-test:latest
+
+      #     # build prod image
+      #     docker build . -f Dockerfile -t anmol
+      #     docker tag anmol anmolnetwork/anmol-node-test:latest
+      #     docker push anmolnetwork/anmol-node-test:latest
+
+          # TODO: deploy to AWS

@@ -16,4 +16,3 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
 USER ${USERNAME}:${USERNAME}
 
 VOLUME [ "/builds/target", "/home/${USERNAME}/.vscode-server/extensions" ]
-
