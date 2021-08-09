@@ -13,15 +13,16 @@ jobs:
         if: endsWith(github.ref, '/ibtida')
         run: |
           echo "ENVIRONMENT=testnet" >> $GITHUB_ENV
+
       - name: Set production env
         if: endsWith(github.ref, '/master')
         run: |
-        echo "ENVIRONMENT=production" >> $GITHUB_ENV
+          echo "ENVIRONMENT=production" >> $GITHUB_ENV
 
       - name: Set debug env
         if: endsWith(github.ref, '/frevert/feature/docker-images')
         run: |
-        echo "ENVIRONMENT=test" >> $GITHUB_ENV
+          echo "ENVIRONMENT=test" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v2

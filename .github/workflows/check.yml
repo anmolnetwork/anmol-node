@@ -6,8 +6,10 @@ on:
 
   push:
     branches: [ master, ibtida ]
-  pull_request:
-    branches: [ master, ibtida ]
+
+  # temporarily disable below for testing
+  # pull_request:
+  #   branches: [ master, ibtida ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
