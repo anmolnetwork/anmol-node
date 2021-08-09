@@ -3,6 +3,7 @@ name: Build Anmol
 on:
   push:
     branches: [ frevert/feature/docker-images ]
+    # branches: [ master, ibtida ]
   workflow_dispatch:
 
 jobs:
@@ -38,7 +39,9 @@ jobs:
       - name: Cache Docker layers
         uses: actions/cache@v2
         with:
-          path: /tmp/.buildx-cache
+          path: |
+            /tmp/.buildx-cache-base
+            /tmp/.buildx-cache-prod
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
@@ -80,8 +83,10 @@ jobs:
         # https://github.com/moby/buildkit/issues/1896
       - name: Move cache
         run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          rm -rf /tmp/.buildx-cache-base
+          rm -rf /tmp/.buildx-cache-prod
+          mv /tmp/.buildx-cache-base-new /tmp/.buildx-cache-base
+          mv /tmp/.buildx-cache--prodnew /tmp/.buildx-cache-prod
 
       # - name: Build docker images
       #   run: |
