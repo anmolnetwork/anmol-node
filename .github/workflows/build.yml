@@ -55,7 +55,8 @@ jobs:
           context: .
           file: ./Dockerfile.build
           push: true
-          tags: anmolnetwork/anmol-node-build-test:latest-${{ github.ref }}
+          # tags: anmolnetwork/anmol-node-build-test:latest-${{ github.ref }}
+          tags: anmolnetwork/anmol-node-build-test:latest
           cache-from: type=local,src=/tmp/.buildx-cache-base
           cache-to: type=local,dest=/tmp/.buildx-cache-base-new
 
