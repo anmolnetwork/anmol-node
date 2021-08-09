@@ -9,6 +9,9 @@ jobs:
   build-anmol:
     runs-on: ubuntu-20.04
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Set testnet env
         if: endsWith(github.ref, '/ibtida')
         run: |
@@ -23,9 +26,6 @@ jobs:
         if: endsWith(github.ref, '/frevert/feature/docker-images')
         run: |
           echo "ENVIRONMENT=test" >> $GITHUB_ENV
-
-      - name: Checkout code
-        uses: actions/checkout@v2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
