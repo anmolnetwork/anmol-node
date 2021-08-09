@@ -28,7 +28,7 @@ ARG USER_GID=$USER_UID
 COPY . .
 
 RUN chown -R $USER_UID:$USER_GID ./ \
-	&& groupadd --gid ${USER_GID} ${USERNAME} \
+    && groupadd --gid ${USER_GID} ${USERNAME} \
     && useradd --uid ${USER_UID} --gid ${USER_GID} -s /bin/bash -m ${USERNAME} \
     && apt-get update \
     && apt-get install -y sudo \
@@ -36,12 +36,12 @@ RUN chown -R $USER_UID:$USER_GID ./ \
     && chmod 0440 /etc/sudoers.d/${USERNAME} \
     && mkdir -p /builds/target /home/${USERNAME}/.vscode-server/extensions \
     && chown -R ${USERNAME}:${USERNAME} /builds /home/${USERNAME}/.vscode-server \
-	&& rm -rf target \
-	&& apt-get dist-upgrade -y -o Dpkg::Options::="--force-confold" \
-	&& apt-get install -y cmake pkg-config libssl-dev git clang   \
-	&& rustup toolchain install nightly \
-	&& rustup target add wasm32-unknown-unknown --toolchain nightly \ 
-	&& rustup component add rustfmt
+    && rm -rf target \
+    && apt-get dist-upgrade -y -o Dpkg::Options::="--force-confold" \
+    && apt-get install -y cmake pkg-config libssl-dev git clang   \
+    && rustup toolchain install nightly \
+    && rustup target add wasm32-unknown-unknown --toolchain nightly \ 
+    && rustup component add rustfmt
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 RUN export PATH="$PATH:$HOME/.cargo/bin"
