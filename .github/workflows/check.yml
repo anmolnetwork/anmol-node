@@ -3,13 +3,10 @@ name: Check Set-Up & Build
 # Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
-
   push:
     branches: [ master, ibtida ]
-
-  # temporarily disable below for testing
-  # pull_request:
-  #   branches: [ master, ibtida ]
+  pull_request:
+    branches: [ master, ibtida ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
