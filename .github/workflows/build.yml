@@ -23,10 +23,6 @@ jobs:
         run: |
           echo "ENVIRONMENT=production" >> $GITHUB_ENV
 
-      - name: Set version env
-        run: |
-          echo "GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | cut -c 1-6)" >> $GITHUB_ENV
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
@@ -52,24 +48,22 @@ jobs:
           context: .
           file: ./Dockerfile.build
           push: true
-          tags: anmolnetwork/anmol-node-build:${{ env.TAG}}-${{ env.VERSION }}
+          tags: anmolnetwork/anmol-node-build:${{ env.TAG}}-${{ github.run_number }}
           cache-from: type=local,src=/tmp/.buildx-cache-base
           cache-to: type=local,dest=/tmp/.buildx-cache-base-new
           build-args: |
             TAG=${{ env.ENVIRONMENT }}
-            VERSION=${{ env.GITHUB_SHA_SHORT }}
 
       - name: Build and push prod image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: anmolnetwork/anmol-node:${{ env.TAG }}-${{ env.VERSION }}
+          tags: anmolnetwork/anmol-node:${{ env.TAG }}-${{ github.run_number }}
           cache-from: type=local,src=/tmp/.buildx-cache-prod
           cache-to: type=local,dest=/tmp/.buildx-cache--prod-new
           build-args: |
             TAG=${{ env.ENVIRONMENT }}
-            VERSION=${{ env.GITHUB_SHA_SHORT }}
 
         # TODO: step to deploy to AWS
 
