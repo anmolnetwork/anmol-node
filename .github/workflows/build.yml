@@ -13,15 +13,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # - name: Set testnet env
-      #   if: endsWith(github.ref, '/ibtida')
-      #   run: |
-      #     echo "ENVIRONMENT=testnet" >> $GITHUB_ENV
+      - name: Set testnet env
+        if: endsWith(github.ref, '/ibtida')
+        run: |
+          echo "ENVIRONMENT=testnet" >> $GITHUB_ENV
 
-      # - name: Set production env
-      #   if: endsWith(github.ref, '/master')
-      #   run: |
-      #     echo "ENVIRONMENT=production" >> $GITHUB_ENV
+      - name: Set production env
+        if: endsWith(github.ref, '/master')
+        run: |
+          echo "ENVIRONMENT=production" >> $GITHUB_ENV
 
       # - name: Set debug env
       #   if: endsWith(github.ref, '/frevert/feature/docker-images')
@@ -59,22 +59,22 @@ jobs:
           file: ./Dockerfile.build
           push: true
           # tags: anmolnetwork/anmol-node-build-test:latest-${{ github.ref }}
-          tags: anmolnetwork/anmol-node-build-test:latest-${{ env.BRANCH}}
+          tags: anmolnetwork/anmol-node-build-test:latest-${{ env.TAG}}
           cache-from: type=local,src=/tmp/.buildx-cache-base
           cache-to: type=local,dest=/tmp/.buildx-cache-base-new
           build-args: |
-            BRANCH=${{ github.ref }}
+            TAG=${{ env.ENVIRONMENT }}
 
       - name: Build and push prod image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: anmolnetwork/anmol-node-test:latest-${{ env.BRANCH }}
+          tags: anmolnetwork/anmol-node-test:latest-${{ env.TAG }}
           cache-from: type=local,src=/tmp/.buildx-cache-prod
           cache-to: type=local,dest=/tmp/.buildx-cache--prod-new
           build-args: |
-            BRANCH=${{ github.ref }}
+            TAG=${{ env.ENVIRONMENT }}
 
         # This ugly bit is necessary if you don't want your cache to grow forever
         # till it hits GitHub's limit of 5GB.
@@ -86,7 +86,7 @@ jobs:
           rm -rf /tmp/.buildx-cache-base
           rm -rf /tmp/.buildx-cache-prod
           mv /tmp/.buildx-cache-base-new /tmp/.buildx-cache-base
-          mv /tmp/.buildx-cache--prodnew /tmp/.buildx-cache-prod
+          mv /tmp/.buildx-cache--prod-new /tmp/.buildx-cache-prod
 
       # - name: Build docker images
       #   run: |
