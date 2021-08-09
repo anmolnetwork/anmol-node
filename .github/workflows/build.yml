@@ -56,18 +56,22 @@ jobs:
           file: ./Dockerfile.build
           push: true
           # tags: anmolnetwork/anmol-node-build-test:latest-${{ github.ref }}
-          tags: anmolnetwork/anmol-node-build-test:latest
+          tags: anmolnetwork/anmol-node-build-test:latest-${{ env.BRANCH}}
           cache-from: type=local,src=/tmp/.buildx-cache-base
           cache-to: type=local,dest=/tmp/.buildx-cache-base-new
+          build-args: |
+            BRANCH=${{ github.ref }}
 
       - name: Build and push prod image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: anmolnetwork/anmol-node-test:latest-${{ github.ref }}
+          tags: anmolnetwork/anmol-node-test:latest-${{ env.BRANCH }}
           cache-from: type=local,src=/tmp/.buildx-cache-prod
           cache-to: type=local,dest=/tmp/.buildx-cache--prod-new
+          build-args: |
+            BRANCH=${{ github.ref }}
 
         # This ugly bit is necessary if you don't want your cache to grow forever
         # till it hits GitHub's limit of 5GB.
