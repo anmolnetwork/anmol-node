@@ -12,20 +12,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set testnet env
-        if: endsWith(github.ref, '/ibtida')
-        run: |
-          echo "ENVIRONMENT=testnet" >> $GITHUB_ENV
+      # - name: Set testnet env
+      #   if: endsWith(github.ref, '/ibtida')
+      #   run: |
+      #     echo "ENVIRONMENT=testnet" >> $GITHUB_ENV
 
-      - name: Set production env
-        if: endsWith(github.ref, '/master')
-        run: |
-          echo "ENVIRONMENT=production" >> $GITHUB_ENV
+      # - name: Set production env
+      #   if: endsWith(github.ref, '/master')
+      #   run: |
+      #     echo "ENVIRONMENT=production" >> $GITHUB_ENV
 
-      - name: Set debug env
-        if: endsWith(github.ref, '/frevert/feature/docker-images')
-        run: |
-          echo "ENVIRONMENT=test" >> $GITHUB_ENV
+      # - name: Set debug env
+      #   if: endsWith(github.ref, '/frevert/feature/docker-images')
+      #   run: |
+      #     echo "ENVIRONMENT=test" >> $GITHUB_ENV
+
+      # - name: Set debug env
+      #   if: endsWith(github.ref, '/frevert/feature/docker-images')
+      #   run: |
+      #     echo "ENVIRONMENT=test" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -50,7 +55,7 @@ jobs:
           context: .
           file: ./Dockerfile.build
           push: true
-          tags: anmolnetwork/anmol-node-build-test:${{ env.TAG }}-latest
+          tags: anmolnetwork/anmol-node-build-test:latest-${{ github.ref }}
           cache-from: type=local,src=/tmp/.buildx-cache-base
           cache-to: type=local,dest=/tmp/.buildx-cache-base-new
 
@@ -59,7 +64,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: anmolnetwork/anmol-node-test:${{ env.TAG }}-latest
+          tags: anmolnetwork/anmol-node-test:latest-${{ github.ref }}
           cache-from: type=local,src=/tmp/.buildx-cache-prod
           cache-to: type=local,dest=/tmp/.buildx-cache--prod-new
 
