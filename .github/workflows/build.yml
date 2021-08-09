@@ -44,31 +44,27 @@ jobs:
 
       - name: Build and push base image
         uses: docker/build-push-action@v2
-        env:
-          PR_NUMBER: ${{ github.event.number }}
-
         with:
           context: .
           file: ./Dockerfile.build
           push: true
-          tags: anmolnetwork/anmol-node-build:${{ env.TAG}}-${{ env.VERSION }}
+          tags: anmolnetwork/anmol-node-build:${{ env.TAG}}-${{ github.event.number }}
           cache-from: type=local,src=/tmp/.buildx-cache-base
           cache-to: type=local,dest=/tmp/.buildx-cache-base-new
           build-args: |
             TAG=${{ env.ENVIRONMENT }}
-            VERSION=${{ env.PR_NUMBER }}
+            VERSION=${{ github.event.number }}
 
       - name: Build and push prod image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: anmolnetwork/anmol-node:${{ env.TAG }}-${{ env.VERSION }}
+          tags: anmolnetwork/anmol-node:${{ env.TAG }}-${{ github.event.number }}
           cache-from: type=local,src=/tmp/.buildx-cache-prod
           cache-to: type=local,dest=/tmp/.buildx-cache--prod-new
           build-args: |
             TAG=${{ env.ENVIRONMENT }}
-            VERSION=${{ env.PR_NUMBER }}
 
         # TODO: step to deploy to AWS
 
