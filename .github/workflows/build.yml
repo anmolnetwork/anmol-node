@@ -12,12 +12,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set testnet env
+      - name: Set default environment env
+        run: |
+          echo "ENVIRONMENT=0.1" >> $GITHUB_ENV
+
+      - name: Set testnet environment env
         if: endsWith(github.ref, '/ibtida')
         run: |
           echo "ENVIRONMENT=testnet" >> $GITHUB_ENV
 
-      - name: Set production env
+      - name: Set production environment env
         if: endsWith(github.ref, '/master')
         run: |
           echo "ENVIRONMENT=production" >> $GITHUB_ENV
