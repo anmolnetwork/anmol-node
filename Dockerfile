@@ -4,5 +4,5 @@ FROM anmolnetwork/anmol-node-build-test AS build_base_stage
 # Second stage to build prod image
 FROM alpine:3.14.0
 WORKDIR /pkg
-COPY --from=build_base_stage . .
+COPY --from=build_base_stage ./app .
 CMD [ "./target/release/anmol"]
