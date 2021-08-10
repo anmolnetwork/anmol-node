@@ -2,7 +2,7 @@
 FROM anmolnetwork/anmol-node-build-test AS build_base_stage
 
 # Second stage to build prod image
-FROM alpine:3.14.0
+FROM debian:10.10-slim
 WORKDIR /pkg
 COPY --from=build_base_stage ./app .
 CMD [ "./target/release/anmol"]
