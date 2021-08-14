@@ -170,7 +170,7 @@ pub mod module {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		pub tokens: Vec<GenesisTokens<T>>,
+		pub tokens: Vec<GenesisTokens<T>>
 	}
 
 	#[cfg(feature = "std")]
