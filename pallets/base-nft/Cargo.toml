@@ -1,8 +1,8 @@
 [package]
 name = "base-nft"
 description = "A pallet to extend for building advanced NFT functions"
-repository = "https://github.com/open-web3-stack/open-runtime-module-library/tree/master/nft"
-license = "Apache-2.0"
+repository = "https://github.com/anmolnetwork/anmol-node"
+license = "Unlicense"
 version = "0.1.0"
 authors = ['DotMatrix <hello@dotmatrix.im>']
 edition = "2018"
