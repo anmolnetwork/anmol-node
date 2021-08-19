@@ -2,7 +2,7 @@
 name = "base-nft"
 description = "A pallet to extend for building advanced NFT functions"
 repository = "https://github.com/anmolnetwork/anmol-node"
-license = "Unlicense"
+license = "GNU Affero General Public License v3.0"
 version = "0.1.0"
 authors = ['DotMatrix <hello@dotmatrix.im>']
 edition = "2018"

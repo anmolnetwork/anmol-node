@@ -2,7 +2,7 @@
 authors = ['DotMatrix <hello@dotmatrix.im>']
 edition = '2018'
 homepage = 'https://anmol.network/'
-license = 'Unlicense'
+license = 'GNU Affero General Public License v3.0'
 name = 'anmol-runtime'
 repository = 'https://github.com/anmolnetwork/anmol-node/'
 version = '0.1.0'
