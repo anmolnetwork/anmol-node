@@ -2,7 +2,7 @@
 authors = ['DotMatrix <hello@dotmatrix.im>']
 edition = '2018'
 homepage = 'https://anmol.network/'
-license = 'Unlicense'
+license = 'GNU Affero General Public License v3.0'
 name = 'anmol-runtime'
 repository = 'https://github.com/anmolnetwork/anmol-node/'
 version = '0.1.0'
@@ -47,7 +47,7 @@ sp-version = { default-features = false, version = '3.0.0' }
 
 # local dependencies
 pallet-nft = { default-features = false, path = '../pallets/nft', version = '0.1.0' }
-orml-nft = { version = "0.4.0", default-features = false }
+base-nft = { version = "0.1.0", default-features = false, path = '../pallets/base-nft' }
 
 [features]
 default = ['std']
@@ -73,6 +73,8 @@ std = [
     'pallet-grandpa/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
+    'pallet-nft/std',
+    'base-nft/std',
     'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',

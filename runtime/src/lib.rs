@@ -46,7 +46,7 @@ use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendTransactionTypes, SigningTypes,
 };
 
-pub use orml_nft;
+pub use base_nft;
 pub use pallet_nft;
 
 /// An index to a block.
@@ -278,7 +278,7 @@ impl pallet_nft::Config for Runtime {
 	type WeightInfo = pallet_nft::weights::SubstrateWeight<Runtime>;
 }
 
-impl orml_nft::Config for Runtime {
+impl base_nft::Config for Runtime {
 	type ClassId = u32;
 	type TokenId = u32;
 	type ClassData = ();
@@ -359,7 +359,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 		NftModule: pallet_nft::{Module, Call, Storage, Event<T>},
-		OrmlNft: orml_nft::{Module, Storage},
+		BaseNft: base_nft::{Module, Storage},
 	}
 );
 

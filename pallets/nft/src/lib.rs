@@ -1,8 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use base_nft::Module as BaseNft;
 use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
-use frame_system::pallet_prelude::*;
-use orml_nft::Pallet as OrmlNft;
+
+use frame_system::{offchain::CreateSignedTransaction, pallet_prelude::*};
+
 pub use pallet::*;
 use sp_std::vec::Vec;
 
@@ -23,7 +25,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + orml_nft::Config<TokenData = (), ClassData = ()>
+		frame_system::Config + base_nft::Config + CreateSignedTransaction<Call<Self>>
 	{
 		type Call: From<Call<Self>>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -61,7 +63,7 @@ pub mod pallet {
 				Error::<T>::MaxIpfsCidCharLength
 			);
 
-			let class_id = OrmlNft::<T>::create_class(
+			let class_id = BaseNft::<T>::create_class(
 				&account_id,
 				ipfs_cid_metadata.clone(),
 				Default::default(),
@@ -72,6 +74,21 @@ pub mod pallet {
 				class_id,
 				ipfs_cid_metadata,
 			));
+			Ok(().into())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2))]
+		pub fn transfer(
+			origin: OriginFor<T>,
+			from: T::AccountId,
+			to: T::AccountId,
+			token: (T::ClassId, T::TokenId),
+			percentage: u8,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+
+			BaseNft::<T>::transfer(&from, &to, token, percentage)?;
+
 			Ok(().into())
 		}
 
@@ -87,7 +104,7 @@ pub mod pallet {
 				Error::<T>::MaxIpfsCidCharLength
 			);
 
-			let token_id = OrmlNft::<T>::mint(
+			let token_id = BaseNft::<T>::mint(
 				&account_id,
 				0_u32.into(), // TODO: Replace with enum NftClassId.IpfsNft
 				ipfs_cid_metadata.clone(),
@@ -106,5 +123,6 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
+
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 }

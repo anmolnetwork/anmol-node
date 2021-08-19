@@ -3,7 +3,7 @@ authors = ['DotMatrix <hello@dotmatrix.im>']
 description = 'Nft pallet'
 edition = '2018'
 homepage = 'https://anmol.network/'
-license = 'Unlicense'
+license = 'GNU Affero General Public License v3.0'
 name = 'pallet-nft'
 readme = 'README.md'
 repository = 'https://github.com/anmolnetwork/anmol-node/'
@@ -22,7 +22,7 @@ sp-std = { default-features = false, version = '3.0.0' }
 sp-runtime = { default-features = false, version = '3.0.0' }
 sp-core = { default-features = false, version = '3.0.0' }
 sp-io = { default-features = false, version = '3.0.0' }
-orml-nft = { version = "0.4.0", default-features = false }
+base-nft = { version = "0.1.0", default-features = false, path = '../base-nft' }
 
 [dev-dependencies]
 
@@ -38,8 +38,8 @@ std = [
 	'sp-std/std',
 	'sp-runtime/std',
 	'sp-core/std',
-	'sp-io/std',
-	'orml-nft/std',
+	'base-nft/std',
+
 ]
 runtime-benchmarks = [
 	'frame-benchmarking',

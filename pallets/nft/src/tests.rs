@@ -4,14 +4,14 @@ use crate::mock::{Event, *};
 use frame_support::{assert_noop, assert_ok};
 
 const ALICE: AccountId = AccountId::new([1u8; 32]);
-const CLASS_ID_IPFS_NFT: <Runtime as orml_nft::Config>::ClassId = 0;
+const CLASS_ID_IPFS_NFT: <Runtime as base_nft::Config>::ClassId = 0;
 
 #[test]
 fn mint_ipfs_nft_works() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
 			Nft::mint_ipfs_nft(Origin::signed(ALICE), vec![0, 1, 2]),
-			orml_nft::Error::<Runtime>::ClassNotFound,
+			base_nft::Error::<Runtime>::ClassNotFound,
 		);
 
 		let too_long_ipfs_cid = vec![1_u8; crate::MAX_IPFS_CID_CHAR_LENGTH];
