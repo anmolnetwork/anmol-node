@@ -55,7 +55,4 @@ RUN set -eux \
 ENV RUSTC_WRAPPER=/usr/local/bin/sccache
 COPY --from=sccache /opt/sccache/sccache $RUSTC_WRAPPER
 
-ARG SCCACHE_BUCKET=anmol-sccache
-ENV SCCACHE_BUCKET=$SCCACHE_BUCKET
-
 USER ${USERNAME}:${USERNAME}
