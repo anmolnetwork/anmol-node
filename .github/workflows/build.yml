@@ -33,15 +33,15 @@ jobs:
           username: ${{ secrets.DOCKER_USER_NAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Get specific changed files
-        id: changed-files-specific
+      - name: Get changes on build Dockerfile
+        id: changed-dockerfile-build
         uses: tj-actions/changed-files@v1.0.0
         with:
           files: Dockerfile.build
 
       - name: Build and push builder image
         uses: docker/build-push-action@v2
-        if: ${{ steps.changed-files-specific.outputs.any_changed == 'true' }}
+        if: ${{ steps.changed-dockerfile-build.outputs.any_changed == 'true' }}
         with:
           file: ./Dockerfile.build
           push: ${{ github.event_name != 'pull_request' }}
