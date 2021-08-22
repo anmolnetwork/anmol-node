@@ -24,6 +24,10 @@ jobs:
     container:
       image: anmolnetwork/anmol-node-build:latest
       options: --user root -v ${{ github.workspace }}:/build/:rw
+      env:
+        SCCACHE_BUCKET: ${{ secrets.SCCACHE_BUCKET }}
+        SCCACHE_AWS_ACCESS_KEY_ID: ${{ secrets.SCCACHE_AWS_ACCESS_KEY_ID }}
+        SCCACHE_AWS_SECRET_ACCESS_KEY: ${{ secrets.SCCACHE_AWS_SECRET_ACCESS_KEY }}
 
     steps:
       - uses: actions/checkout@v2
