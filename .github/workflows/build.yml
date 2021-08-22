@@ -1,43 +1,30 @@
-name: Build Anmol
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Build Node
 
 on:
   push:
-    branches: [ master, ibtida ]
-  workflow_dispatch:
+    branches:
+      - 'master'
+      - 'ibtida'
+
+    tags:
+      - 'v*'
+
+  pull_request:
+    branches:
+      - 'master'
+      - 'ibtida'
 
 jobs:
-  build-anmol:
+  build-docker-images:
     runs-on: ubuntu-20.04
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set default environment env
-        run: |
-          echo "ENVIRONMENT=0.1" >> $GITHUB_ENV
-
-      - name: Set testnet environment env
-        if: endsWith(github.ref, '/ibtida')
-        run: |
-          echo "ENVIRONMENT=testnet" >> $GITHUB_ENV
-
-      - name: Set production environment env
-        if: endsWith(github.ref, '/master')
-        run: |
-          echo "ENVIRONMENT=production" >> $GITHUB_ENV
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: |
-            /tmp/.buildx-cache-base
-            /tmp/.buildx-cache-prod
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
@@ -45,39 +32,43 @@ jobs:
           username: ${{ secrets.DOCKER_USER_NAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push base image
-        uses: docker/build-push-action@v2
+      - name: Get specific changed files
+        id: changed-files-specific
+        uses: tj-actions/changed-files@v1.0.0
         with:
-          context: .
+          files: Dockerfile.build
+
+      - name: Build and push builder image
+        uses: docker/build-push-action@v2
+        if: ${{ steps.changed-files-specific.outputs.any_changed == 'true' }}
+        with:
           file: ./Dockerfile.build
-          push: true
-          tags: anmolnetwork/anmol-node-build:latest-${{ env.TAG}}
-          cache-from: type=local,src=/tmp/.buildx-cache-base
-          cache-to: type=local,dest=/tmp/.buildx-cache-base-new
-          build-args: |
-            TAG=${{ env.ENVIRONMENT }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: anmolnetwork/anmol-node-build:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Build and push prod image
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: anmolnetwork/anmol-node
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+
+      - name: Build and push production image
         uses: docker/build-push-action@v2
         with:
-          context: .
-          push: true
-          tags: anmolnetwork/anmol-node:latest-${{ env.TAG }}
-          cache-from: type=local,src=/tmp/.buildx-cache-prod
-          cache-to: type=local,dest=/tmp/.buildx-cache--prod-new
           build-args: |
-            TAG=${{ env.ENVIRONMENT }}
-
-        # TODO: step to deploy to AWS
-
-        # This ugly bit is necessary if you don't want your cache to grow forever
-        # till it hits GitHub's limit of 5GB.
-        # Temp fix
-        # https://github.com/docker/build-push-action/issues/252
-        # https://github.com/moby/buildkit/issues/1896
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache-base
-          rm -rf /tmp/.buildx-cache-prod
-          mv /tmp/.buildx-cache-base-new /tmp/.buildx-cache-base
-          mv /tmp/.buildx-cache--prod-new /tmp/.buildx-cache-prod
+            BUILD_DATE=${{ steps.date.outputs.date }}
+            GIT_SHORT_SHA=${{ github.sha }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
