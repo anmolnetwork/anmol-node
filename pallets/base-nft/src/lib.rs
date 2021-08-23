@@ -131,6 +131,7 @@ pub mod module {
 	#[pallet::getter(fn next_token_id)]
 	pub type NextTokenId<T: Config> =
 		StorageMap<_, Twox64Concat, T::ClassId, T::TokenId, ValueQuery>;
+		
 
 	/// Store class info.
 	///
