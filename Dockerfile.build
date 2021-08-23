@@ -1,0 +1,58 @@
+# syntax=docker/dockerfile:1
+#
+# Dockerfile with everything needed for local development
+# and creating a base image for production builds
+
+FROM debian:buster-slim AS sccache
+
+ARG SCCACHE_VERSION=0.2.15
+ADD https://github.com/mozilla/sccache/releases/download/v${SCCACHE_VERSION}/sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz /tmp
+
+RUN set -eux \
+  && tar -zxvf /tmp/sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz -C /tmp \
+  && mv /tmp/sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl /opt/sccache \
+  && chmod +x /opt/sccache/sccache
+
+FROM rust:1.54-slim-buster AS build
+
+# non-root user
+ARG USERNAME=anmol
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+WORKDIR /build
+
+# install tools and dependencies
+RUN set -eux \
+  && export DEBIAN_FRONTEND=noninteractive \
+  && apt-get update \
+  && apt-get upgrade -y \
+  && apt-get install -y \
+    ca-certificates \
+    clang \
+    cmake \
+    curl \
+    git \
+    libssl-dev \
+    libssl1.1 \
+    libudev-dev \
+    llvm \
+    pkg-config \
+  && apt-get dist-upgrade -y -o Dpkg::Options::="--force-confold" \
+  && apt-get autoremove -y \
+  && apt-get clean \
+  && unset DEBIAN_FRONTEND \
+  && find /var/lib/apt/lists/ -type f -not -name lock -delete \
+  # Add user
+  && groupadd --gid ${USER_GID} ${USERNAME} \
+  && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} \
+  && chown -R ${USERNAME}:${USERNAME} . \
+  # Install Rust components
+  && rustup update nightly \
+  && rustup target add wasm32-unknown-unknown --toolchain nightly \
+  && rustup component add rustfmt
+
+ENV RUSTC_WRAPPER=/usr/local/bin/sccache
+COPY --from=sccache /opt/sccache/sccache $RUSTC_WRAPPER
+
+USER ${USERNAME}:${USERNAME}
