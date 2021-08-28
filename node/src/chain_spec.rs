@@ -47,6 +47,38 @@ pub fn chain_properties() -> Properties {
 	properties
 }
 
+
+/// Configure initial storage state for FRAME modules.
+fn testnet_genesis(
+	wasm_binary: &[u8],
+	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	root_key: AccountId,
+	endowed_accounts: Vec<AccountId>,
+	_enable_println: bool,
+) -> GenesisConfig {
+	GenesisConfig {
+		frame_system: Some(SystemConfig {
+			// Add Wasm runtime to storage.
+			code: wasm_binary.to_vec(),
+			changes_trie_config: Default::default(),
+		}),
+		pallet_balances: Some(BalancesConfig {
+			// Configure endowed accounts with initial balance of 1 << 60.
+			balances: endowed_accounts.iter().cloned().map(|k|(k, 1 << 60)).collect(),
+		}),
+		pallet_aura: Some(AuraConfig {
+			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
+		}),
+		pallet_grandpa: Some(GrandpaConfig {
+			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
+		}),
+		pallet_sudo: Some(SudoConfig {
+			// Assign network admin rights.
+			key: root_key,
+		}),
+	}
+}
+
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
@@ -137,33 +169,42 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	))
 }
 
-/// Configure initial storage state for FRAME modules.
-fn testnet_genesis(
-	wasm_binary: &[u8],
-	initial_authorities: Vec<(AuraId, GrandpaId)>,
-	root_key: AccountId,
-	endowed_accounts: Vec<AccountId>,
-	_enable_println: bool,
-) -> GenesisConfig {
-	GenesisConfig {
-		frame_system: Some(SystemConfig {
-			// Add Wasm runtime to storage.
-			code: wasm_binary.to_vec(),
-			changes_trie_config: Default::default(),
-		}),
-		pallet_balances: Some(BalancesConfig {
-			// Configure endowed accounts with initial balance of 1 << 60.
-			balances: endowed_accounts.iter().cloned().map(|k|(k, 1 << 60)).collect(),
-		}),
-		pallet_aura: Some(AuraConfig {
-			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-		}),
-		pallet_grandpa: Some(GrandpaConfig {
-			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
-		}),
-		pallet_sudo: Some(SudoConfig {
-			// Assign network admin rights.
-			key: root_key,
-		}),
-	}
+// testnet config
+pub fn ibtida_config() -> Result<ChainSpec, String> {
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+
+	Ok(ChainSpec::from_genesis(
+		// Name
+		"Testnet",
+		// ID
+		"testnet",
+		ChainType::Local,
+		move || {
+			testnet_genesis(
+				wasm_binary,
+				// Initial PoA authorities
+				vec![
+					authority_keys_from_seed("anmol-faucet"),
+					authority_keys_from_seed("anmol-tmp-admin"),
+				],
+				// Sudo account
+				get_account_id_from_seed::<sr25519::Public>("anmol-tmp-admin"),
+				// Pre-funded accounts
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("anmol-faucet"),
+				],
+				true,
+			)
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		// Properties
+		Some(chain_properties()),
+		// Extensions
+		None,
+	))
 }
