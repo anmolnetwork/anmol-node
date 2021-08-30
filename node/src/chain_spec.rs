@@ -1,11 +1,12 @@
 use sp_core::{Pair, Public, sr25519};
 use anmol_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
+	AccountId, AuraConfig, Balance, BalancesConfig, GenesisConfig, GrandpaConfig,
 	SudoConfig, SystemConfig, WASM_BINARY, Signature
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{Verify, IdentifyAccount};
+use sp_runtime::AccountId32;
 use sc_service::{ChainType, Properties};
 use hex_literal::hex;
 
@@ -47,7 +48,6 @@ pub fn chain_properties() -> Properties {
 	properties
 }
 
-
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
@@ -78,6 +78,40 @@ fn testnet_genesis(
 		}),
 	}
 }
+
+fn ibtida_genesis(
+	wasm_binary: &[u8],
+	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	root_key: AccountId32,
+	founder_allocation:  Vec<(AccountId32, Balance)>,
+	_enable_println: bool,
+) -> GenesisConfig {
+
+	GenesisConfig {
+		frame_system: Some(SystemConfig {
+			// Add Wasm runtime to storage.
+			code: wasm_binary.to_vec(),
+			changes_trie_config: Default::default(),
+		}),
+		pallet_balances: Some(BalancesConfig {
+			balances: founder_allocation
+				.iter()
+				.map(|x| (x.0.clone(), x.1.clone()))
+				.collect(),
+		}),
+		pallet_aura: Some(AuraConfig {
+			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
+		}),
+		pallet_grandpa: Some(GrandpaConfig {
+			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
+		}),
+		pallet_sudo: Some(SudoConfig {
+			// Assign network admin rights.
+			key: root_key,
+		}),
+	}
+}
+
 
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
@@ -171,27 +205,28 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 
 // testnet config
 pub fn ibtida_config() -> Result<ChainSpec, String> {
+	let anmol_ibtida_faucet: AccountId32 = hex!["ccf5874fd384392564d90fd74d92f28489267693d23156a5667a06458292ae23"].into();
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
 	Ok(ChainSpec::from_genesis(
 		// Name
-		"Testnet",
+		"Ibtida",
 		// ID
-		"testnet",
-		ChainType::Local,
+		"ibtida",
+		ChainType::Live,
 		move || {
-			testnet_genesis(
+			ibtida_genesis(
 				wasm_binary,
 				// Initial PoA authorities
 				vec![
-					authority_keys_from_seed("anmol-faucet"),
-					authority_keys_from_seed("anmol-tmp-admin"),
+					authority_keys_from_seed("Alice"),
+					authority_keys_from_seed("Bob"),
 				],
 				// Sudo account
-				get_account_id_from_seed::<sr25519::Public>("anmol-tmp-admin"),
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Pre-funded accounts
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("anmol-faucet"),
+					(anmol_ibtida_faucet.clone(), 500000)
 				],
 				true,
 			)
