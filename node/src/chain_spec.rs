@@ -86,7 +86,6 @@ fn ibtida_genesis(
 	founder_allocation:  Vec<(AccountId32, Balance)>,
 	_enable_println: bool,
 ) -> GenesisConfig {
-
 	GenesisConfig {
 		frame_system: Some(SystemConfig {
 			// Add Wasm runtime to storage.
@@ -102,9 +101,6 @@ fn ibtida_genesis(
 		pallet_grandpa: Some(GrandpaConfig {
 			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
 		}),		
-		// Issue #2 happens when setting either of the following:
-		// pallet_grandpa: Default::default(),
-		// pallet_grandpa: Some(GrandpaConfig { authorities: vec![] }),
 		pallet_aura: Some(AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
 		}),
@@ -208,7 +204,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 
 // testnet config
 pub fn ibtida_config() -> Result<ChainSpec, String> {
-	let anmol_ibtida_faucet: AccountId32 = hex!["ccf5874fd384392564d90fd74d92f28489267693d23156a5667a06458292ae23"].into();
+	let anmol_ibtida_faucet: AccountId32 = hex!["169af6d461e12d74fe252c853c8728bb4bed714af3a2bc70406a95e4b471bb43"].into();
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
 	Ok(ChainSpec::from_genesis(
@@ -222,15 +218,14 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 				wasm_binary,
 				// Initial PoA authorities
 				vec![
-					authority_keys_from_seed("Alice"),
-					authority_keys_from_seed("Bob"),
+					authority_keys_from_seed(&anmol_ibtida_faucet.to_string()),
 				],
 				// Sudo account
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_account_id_from_seed::<sr25519::Public>(&anmol_ibtida_faucet.to_string()),
 				// Pre-funded accounts
 				vec![
 				// Issue #1
-					(anmol_ibtida_faucet.clone(), 50000000)
+					(anmol_ibtida_faucet.clone(), 5000000000000000000)
 				],
 				true,
 			)
