@@ -99,11 +99,14 @@ fn ibtida_genesis(
 				.map(|x| (x.0.clone(), x.1.clone()))
 				.collect(),
 		}),
-		pallet_aura: Some(AuraConfig {
-			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-		}),
 		pallet_grandpa: Some(GrandpaConfig {
 			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
+		}),		
+		// Issue #2 happens when setting either of the following:
+		// pallet_grandpa: Default::default(),
+		// pallet_grandpa: Some(GrandpaConfig { authorities: vec![] }),
+		pallet_aura: Some(AuraConfig {
+			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
 		}),
 		pallet_sudo: Some(SudoConfig {
 			// Assign network admin rights.
@@ -226,6 +229,7 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Pre-funded accounts
 				vec![
+				// Issue #1
 					(anmol_ibtida_faucet.clone(), 500000)
 				],
 				true,
