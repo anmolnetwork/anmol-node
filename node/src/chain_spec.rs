@@ -230,7 +230,7 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 				// Pre-funded accounts
 				vec![
 				// Issue #1
-					(anmol_ibtida_faucet.clone(), 500000)
+					(anmol_ibtida_faucet.clone(), 50000000)
 				],
 				true,
 			)
