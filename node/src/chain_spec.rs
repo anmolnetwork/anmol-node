@@ -2,13 +2,13 @@ use anmol_runtime::{
 	constants::tokens::TOKEN_COUNT, AccountId, AuraConfig, Balance, BalancesConfig, BaseNftConfig,
 	GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
+use hex_literal::hex;
 use sc_service::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_runtime::AccountId32;
-use hex_literal::hex;
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -250,9 +250,7 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 				// Sudo account
 				anmol_ibtida_faucet.clone(),
 				// Pre-funded accounts
-				vec![
-					(anmol_ibtida_faucet.clone(), TOKEN_COUNT),
-				],
+				vec![(anmol_ibtida_faucet.clone(), TOKEN_COUNT)],
 				true,
 			)
 		},
