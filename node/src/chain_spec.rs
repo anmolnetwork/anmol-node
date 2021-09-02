@@ -8,7 +8,6 @@ use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_runtime::AccountId32;
-// use hex_literal;
 use hex_literal::hex;
 
 // The URL for the telemetry server.
@@ -252,7 +251,6 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 				anmol_ibtida_faucet.clone(),
 				// Pre-funded accounts
 				vec![
-					// Issue #1
 					(anmol_ibtida_faucet.clone(), TOKEN_COUNT),
 				],
 				true,

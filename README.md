@@ -70,6 +70,11 @@ This command will start the single-node development chain with persistent state:
 ./target/release/anmol --dev
 ```
 
+To run the node with the ibtida(testnet) chain spec locally, run:
+```bash
+./target/release/anmol --tmp --chain ibtida
+```
+
 Purge the development chain's state:
 
 ```bash
