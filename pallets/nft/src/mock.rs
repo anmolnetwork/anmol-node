@@ -1,13 +1,16 @@
+#![cfg(test)]
+
 use crate as pallet_nft;
-use sp_core::{H256, crypto::AccountId32};
-use frame_support::{parameter_types, debug};
-use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup, SaturatedConversion},
-	testing::Header,
-	generic, MultiSignature,
+use frame_support::{debug, parameter_types};
+use frame_system::offchain::{
+	AppCrypto, CreateSignedTransaction, SendTransactionTypes, SigningTypes,
 };
-use frame_system::{
-	offchain::{CreateSignedTransaction, AppCrypto, SigningTypes, SendTransactionTypes},
+use sp_core::{crypto::AccountId32, H256};
+use sp_runtime::{
+	generic,
+	testing::Header,
+	traits::{BlakeTwo256, IdentityLookup, SaturatedConversion},
+	MultiSignature,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
@@ -21,7 +24,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Module, Call, Config, Storage, Event<T>},
 		Nft: pallet_nft::{Module, Call, Storage, Event<T>},
-		OrmlNft: orml_nft::{Module, Storage},
+		BaseNft: base_nft::{Module, Storage},
 	}
 );
 
@@ -58,16 +61,16 @@ impl frame_system::Config for Runtime {
 pub type AccountId = AccountId32;
 
 impl pallet_nft::Config for Runtime {
-	type AuthorityId = pallet_nft::crypto::TestAuthId;
 	type Call = Call;
 	type Event = Event;
+	type WeightInfo = pallet_nft::weights::SubstrateWeight<Runtime>;
 }
 
-impl orml_nft::Config for Runtime {
+impl base_nft::Config for Runtime {
 	type ClassId = u32;
 	type TokenId = u32;
-	type ClassData = pallet_nft::ClassData;
-	type TokenData = pallet_nft::TokenData;
+	type ClassData = ();
+	type TokenData = ();
 }
 
 pub type SignedExtra = (

@@ -3,7 +3,7 @@
 Anmol is the First Cross-Chain NFT Toolkit, on Polkadot. Introducing:
 
 - Moulds
-- NFT Breeding
+- NFT Morphing
 - Multi-Chain NFT Migration
 - ink! for Moulds
 - DAO-based Communities
@@ -57,6 +57,10 @@ subcommands:
 The provided `cargo run` command will launch a temporary node and its state will be discarded after
 you terminate the process. After the project has been built, there are other ways to launch the
 node.
+
+## Format code style
+
+The project relies on [rustfmt](https://github.com/rust-lang/rustfmt) for automatic code formatting. To keep the formatting in the project consistent for changes, run `cargo fmt` before making commits.
 
 ### Single-Node Development Chain
 
@@ -157,8 +161,7 @@ the following:
 ### Pallets
 
 The runtime in this project is constructed using many FRAME pallets that ship with the
-[core Substrate repository](https://github.com/paritytech/substrate/tree/master/frame) and a
-pallet that is [defined in the `pallets`](./pallets/kitties/src/lib.rs) directory.
+[core Substrate repository](https://github.com/paritytech/substrate/tree/master/frame)
 
 A FRAME pallet is compromised of a number of blockchain primitives:
 

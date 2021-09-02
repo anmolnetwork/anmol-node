@@ -1,47 +1,45 @@
-name: Check Set-Up & Build
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Check & Benchmarking
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events
   push:
-    branches: [ master ]
+    branches:
+      - 'master'
+      - 'ibtida'
+
   pull_request:
-    branches: [ master ]
+    branches:
+      - 'master'
+      - 'ibtida'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   check:
-    # The type of runner that the job will run on
     runs-on: ubuntu-20.04
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    container:
+      image: anmolnetwork/anmol-node-build:latest
+      options: --user root -v ${{ github.workspace }}:/build/:rw
+      env:
+        SCCACHE_BUCKET: ${{ secrets.SCCACHE_BUCKET }}
+        SCCACHE_AWS_ACCESS_KEY_ID: ${{ secrets.SCCACHE_AWS_ACCESS_KEY_ID }}
+        SCCACHE_AWS_SECRET_ACCESS_KEY: ${{ secrets.SCCACHE_AWS_SECRET_ACCESS_KEY }}
+
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: Set-Up
-        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
+      - name: Lint Code
+        run: cargo fmt -- --check
 
-      - name: Install Rustup
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source ~/.cargo/env
-          rustup default stable
-          rustup update nightly
-          rustup update stable
-          rustup target add wasm32-unknown-unknown --toolchain nightly
+      - name: Check
+        run: SKIP_WASM_BUILD=1 cargo check --release
 
-      - name: Check Build
-        run: |
-          SKIP_WASM_BUILD=1 cargo check --release
+      - name: Test
+        run: SKIP_WASM_BUILD=1 cargo test --release
 
-      - name: Check Tests
-        run: cargo test --release
-
-      - name: Check Build for Benchmarking
-        run: >
-          pushd node &&
-          cargo check --features=runtime-benchmarks --release
+      - name: Check Benchmarks
+        run: cargo check --features=runtime-benchmarks --release --manifest-path=node/Cargo.toml

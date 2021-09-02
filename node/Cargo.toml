@@ -4,7 +4,7 @@ build = 'build.rs'
 description = 'Anmol Substrate Node'
 edition = '2018'
 homepage = 'https://anmol.network/'
-license = 'Unlicense'
+license = 'GNU Affero General Public License v3.0'
 name = 'anmol'
 repository = 'https://github.com/anmolnetwork/anmol-node/'
 version = '0.1.0'
@@ -21,7 +21,6 @@ substrate-build-script-utils = '3.0.0'
 [dependencies]
 jsonrpc-core = '15.1.0'
 structopt = '0.3.8'
-hex-literal = '0.3.1'
 
 # Substrate dependencies
 frame-benchmarking = '3.1.0'

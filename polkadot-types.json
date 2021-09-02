@@ -8,7 +8,7 @@
     "ClassInfoOf": "ClassInfo",
     "TokenInfo": {
         "metadata": "Vec<u8>",
-        "owner": "AccountId",
+        "owners": "Vec<AccountId>",
         "data": "TokenData"
     },
     "TokenInfoOf": "TokenInfo",
@@ -25,5 +25,8 @@
         "class_id": "ClassId",
         "token_data": "TokenData"
     },
-    "PendingNftOf": "PendingNft"
+    "PendingNftOf": "PendingNft",
+    "TokenByOwnerData": {
+        "percent_owned": "u8"
+    }
 }

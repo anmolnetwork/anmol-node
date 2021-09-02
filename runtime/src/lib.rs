@@ -1,53 +1,53 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use sp_std::prelude::*;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, Encode};
-use sp_runtime::{
-	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, MultiSignature, MultiAddress,
-	transaction_validity::{TransactionValidity, TransactionSource},
-};
-use sp_runtime::traits::{
-	BlakeTwo256, Block as BlockT, AccountIdLookup, Verify, IdentifyAccount, NumberFor, SaturatedConversion,
-};
+use pallet_grandpa::fg_primitives;
+use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
-use pallet_grandpa::fg_primitives;
-use sp_version::RuntimeVersion;
+use sp_core::{crypto::KeyTypeId, Encode, OpaqueMetadata};
+use sp_runtime::traits::{
+	AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, SaturatedConversion,
+	Verify,
+};
+use sp_runtime::{
+	create_runtime_str, generic, impl_opaque_keys,
+	transaction_validity::{TransactionSource, TransactionValidity},
+	ApplyExtrinsicResult, MultiAddress, MultiSignature,
+};
+use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
+use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-pub use pallet_timestamp::Call as TimestampCall;
-pub use pallet_balances::Call as BalancesCall;
-pub use sp_runtime::{Permill, Perbill};
 pub use frame_support::{
-	construct_runtime, parameter_types, StorageValue,
+	construct_runtime, debug, parameter_types,
 	traits::{KeyOwnerProofSystem, Randomness},
 	weights::{
-		Weight, IdentityFee,
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+		IdentityFee, Weight,
 	},
-	debug,
+	StorageValue,
 };
+pub use pallet_balances::Call as BalancesCall;
+pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
+pub use sp_runtime::{Perbill, Permill};
 
-use frame_system::{
-	offchain::{CreateSignedTransaction, AppCrypto, SigningTypes, SendTransactionTypes},
+use frame_system::offchain::{
+	AppCrypto, CreateSignedTransaction, SendTransactionTypes, SigningTypes,
 };
 
-/// Import the kitties pallet.
-pub use pallet_kitties;
+pub use base_nft;
 pub use pallet_nft;
-pub use orml_nft;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -274,21 +274,17 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-impl pallet_kitties::Config for Runtime {
-	type Event = Event;
-}
-
 impl pallet_nft::Config for Runtime {
-	type AuthorityId = pallet_nft::crypto::TestAuthId;
 	type Call = Call;
 	type Event = Event;
+	type WeightInfo = pallet_nft::weights::SubstrateWeight<Runtime>;
 }
 
-impl orml_nft::Config for Runtime {
+impl base_nft::Config for Runtime {
 	type ClassId = u32;
 	type TokenId = u32;
-	type ClassData = pallet_nft::ClassData;
-	type TokenData = pallet_nft::TokenData;
+	type ClassData = ();
+	type TokenData = ();
 }
 
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
@@ -364,9 +360,8 @@ construct_runtime!(
 		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
-		KittiesModule: pallet_kitties::{Module, Call, Storage, Event<T>},
 		NftModule: pallet_nft::{Module, Call, Storage, Event<T>},
-		OrmlNft: orml_nft::{Module, Storage},
+		BaseNft: base_nft::{Module, Storage, Config<T>},
 	}
 );
 
@@ -388,7 +383,7 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>
+	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
@@ -562,7 +557,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_kitties, KittiesModule);
+			add_benchmark!(params, batches, pallet_nft, NftModule);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
