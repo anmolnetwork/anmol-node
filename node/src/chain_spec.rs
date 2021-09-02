@@ -229,9 +229,7 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 				// Sudo account
 				anmol_ibtida_faucet.clone(),
 				// Pre-funded accounts
-				vec![
-					(anmol_ibtida_faucet.clone(), TOKEN_COUNT),
-				],
+				vec![(anmol_ibtida_faucet.clone(), TOKEN_COUNT)],
 				true,
 			)
 		},
