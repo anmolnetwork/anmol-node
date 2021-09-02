@@ -2,7 +2,7 @@
 authors = ['DotMatrix <hello@dotmatrix.im>']
 edition = '2018'
 homepage = 'https://anmol.network/'
-license = 'Unlicense'
+license = 'GNU Affero General Public License v3.0'
 name = 'anmol-runtime'
 repository = 'https://github.com/anmolnetwork/anmol-node/'
 version = '0.1.0'
@@ -46,9 +46,8 @@ sp-transaction-pool = { default-features = false, version = '3.0.0' }
 sp-version = { default-features = false, version = '3.0.0' }
 
 # local dependencies
-pallet-kitties = { default-features = false, path = '../pallets/kitties', version = '0.1.0' }
 pallet-nft = { default-features = false, path = '../pallets/nft', version = '0.1.0' }
-orml-nft = { version = "0.4.0", default-features = false }
+base-nft = { version = "0.1.0", default-features = false, path = '../pallets/base-nft' }
 
 [features]
 default = ['std']
@@ -59,9 +58,9 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'hex-literal',
     'pallet-balances/runtime-benchmarks',
-    'pallet-kitties/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
+    'pallet-nft/runtime-benchmarks',
 ]
 std = [
     'codec/std',
@@ -74,9 +73,8 @@ std = [
     'pallet-grandpa/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
-    'pallet-kitties/std',
     'pallet-nft/std',
-    'orml-nft/std',
+    'base-nft/std',
     'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
