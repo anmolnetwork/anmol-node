@@ -1,7 +1,7 @@
 use sp_core::{Pair, Public, sr25519};
 use anmol_runtime::{
 	AccountId, AuraConfig, Balance, BalancesConfig, GenesisConfig, GrandpaConfig,
-	SudoConfig, SystemConfig, WASM_BINARY, Signature
+	SudoConfig, SystemConfig, WASM_BINARY, Signature, constants::tokens::TOKEN_COUNT
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -204,8 +204,8 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 
 // testnet config
 pub fn ibtida_config() -> Result<ChainSpec, String> {
-	let anmol_ibtida_faucet: AccountId32 = hex!["169af6d461e12d74fe252c853c8728bb4bed714af3a2bc70406a95e4b471bb43"].into();
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+	let anmol_ibtida_faucet: AccountId32 = hex!["169af6d461e12d74fe252c853c8728bb4bed714af3a2bc70406a95e4b471bb43"].into();
 
 	Ok(ChainSpec::from_genesis(
 		// Name
@@ -221,11 +221,12 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 					authority_keys_from_seed(&anmol_ibtida_faucet.to_string()),
 				],
 				// Sudo account
-				get_account_id_from_seed::<sr25519::Public>(&anmol_ibtida_faucet.to_string()),
+				
+				anmol_ibtida_faucet.clone(),
 				// Pre-funded accounts
 				vec![
 				// Issue #1
-					(anmol_ibtida_faucet.clone(), 5000000000000000000)
+					(anmol_ibtida_faucet.clone(), TOKEN_COUNT)
 				],
 				true,
 			)
