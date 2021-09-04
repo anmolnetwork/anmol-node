@@ -40,7 +40,7 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 
 pub fn chain_properties() -> Properties {
 	let mut properties = Properties::new();
-	properties.insert("tokenDecimals".into(), 9.into());
+	properties.insert("tokenDecimals".into(), 18.into());
 	properties.insert("tokenSymbol".into(), "ANML".into());
 	properties.insert("ss58Format".into(), 92.into());
 	properties
