@@ -49,7 +49,7 @@ pub fn chain_properties() -> Properties {
 pub fn testnet_chain_properties() -> Properties {
 	let mut properties = chain_properties();
 	properties.insert("tokenSymbol".into(), "tANML".into());
-	properties.insert("ss58Format".into(), 92.into());
+	properties.insert("ss58Format".into(), 128.into());
 	properties
 }
 
