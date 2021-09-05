@@ -46,6 +46,13 @@ pub fn chain_properties() -> Properties {
 	properties
 }
 
+pub fn testnet_chain_properties() -> Properties {
+	let mut properties = chain_properties();
+	properties.insert("tokenSymbol".into(), "tANML".into());
+	properties.insert("ss58Format".into(), 92.into());
+	properties
+}
+
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
@@ -234,7 +241,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 pub fn ibtida_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 	let anmol_ibtida_faucet: AccountId32 =
-		hex!["169af6d461e12d74fe252c853c8728bb4bed714af3a2bc70406a95e4b471bb43"].into();
+		hex!["1e5227bee5f6ca1bb2f08a8e615788b96637b0d8e51c05c290fefaf27b91660b"].into();
 
 	Ok(ChainSpec::from_genesis(
 		// Name
@@ -250,7 +257,9 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 				// Sudo account
 				anmol_ibtida_faucet.clone(),
 				// Pre-funded accounts
-				vec![(anmol_ibtida_faucet.clone(), TOKEN_COUNT)],
+				vec![
+					(anmol_ibtida_faucet.clone(), TOKEN_COUNT)
+					],
 				true,
 			)
 		},
@@ -261,7 +270,7 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 		// Protocol ID
 		None,
 		// Properties
-		Some(chain_properties()),
+		Some(testnet_chain_properties()),
 		// Extensions
 		None,
 	))
