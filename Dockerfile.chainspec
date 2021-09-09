@@ -1,5 +1,0 @@
-FROM anmolnetwork/anmol-node AS anmol
-
-VOLUME [ "./chains" ]
-
-RUN ./target/release/anmol build-spec --chain=customSpec.json --raw --disable-default-bootnode > customSpecRaw.json
