@@ -70,11 +70,6 @@ This command will start the single-node development chain with persistent state:
 ./target/release/anmol --dev
 ```
 
-To prepare the ibtida(testnet) chain spec, start by building the raw chainspec:
-```bash
-./target/release/anmol build-spec --chain=./chains/ibtida.json --raw --disable-default-bootnode > ibtidaRaw.json
-```
-
 Purge the development chain's state:
 
 ```bash
