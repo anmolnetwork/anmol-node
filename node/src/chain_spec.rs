@@ -215,7 +215,7 @@ fn ibtida_genesis(
 		pallet_balances: Some(BalancesConfig {
 			balances: founder_allocation
 				.iter()
-				.map(|x| (x.0.clone(), x.1.clone()))
+				.map(|(account_id, balance)| (account_id.clone(), balance.clone()))
 				.collect(),
 		}),
 		pallet_grandpa: Some(GrandpaConfig {
@@ -225,7 +225,7 @@ fn ibtida_genesis(
 				.collect(),
 		}),
 		pallet_aura: Some(AuraConfig {
-			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
+			authorities: initial_authorities.iter().map(|(aura_id, _)| (aura_id.clone())).collect(),
 		}),
 		pallet_sudo: Some(SudoConfig {
 			// Assign network admin rights.
@@ -257,9 +257,7 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 				// Sudo account
 				anmol_ibtida_faucet.clone(),
 				// Pre-funded accounts
-				vec![
-					(anmol_ibtida_faucet.clone(), TOKEN_COUNT)
-					],
+				vec![(anmol_ibtida_faucet.clone(), TOKEN_COUNT)],
 				true,
 			)
 		},
