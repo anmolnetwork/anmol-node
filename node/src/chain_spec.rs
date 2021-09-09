@@ -225,7 +225,10 @@ fn ibtida_genesis(
 				.collect(),
 		}),
 		pallet_aura: Some(AuraConfig {
-			authorities: initial_authorities.iter().map(|(aura_id, _)| (aura_id.clone())).collect(),
+			authorities: initial_authorities
+				.iter()
+				.map(|(aura_id, _)| (aura_id.clone()))
+				.collect(),
 		}),
 		pallet_sudo: Some(SudoConfig {
 			// Assign network admin rights.
