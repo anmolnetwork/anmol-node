@@ -1,14 +1,12 @@
 use anmol_runtime::{
-	constants::tokens::TOKEN_COUNT, AccountId, AuraConfig, Balance, BalancesConfig, BaseNftConfig,
+	AccountId, AuraConfig, BalancesConfig, BaseNftConfig,
 	GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
-use hex_literal::hex;
 use sc_service::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use sp_runtime::AccountId32;
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -43,13 +41,6 @@ pub fn chain_properties() -> Properties {
 	properties.insert("tokenDecimals".into(), 18.into());
 	properties.insert("tokenSymbol".into(), "ANML".into());
 	properties.insert("ss58Format".into(), 92.into());
-	properties
-}
-
-pub fn testnet_chain_properties() -> Properties {
-	let mut properties = chain_properties();
-	properties.insert("tokenSymbol".into(), "tANML".into());
-	properties.insert("ss58Format".into(), 128.into());
 	properties
 }
 
@@ -191,88 +182,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	))
 }
 
-fn ibtida_genesis(
-	wasm_binary: &[u8],
-	initial_authorities: Vec<(AuraId, GrandpaId)>,
-	root_key: AccountId32,
-	founder_allocation: Vec<(AccountId32, Balance)>,
-	_enable_println: bool,
-) -> GenesisConfig {
-	// base nft class for genesis block
-	let initial_state = vec![(
-		get_account_id_from_seed::<sr25519::Public>("Alice"),
-		[0].to_vec(),
-		(),
-		[].to_vec(),
-	)];
-
-	GenesisConfig {
-		frame_system: Some(SystemConfig {
-			// Add Wasm runtime to storage.
-			code: wasm_binary.to_vec(),
-			changes_trie_config: Default::default(),
-		}),
-		pallet_balances: Some(BalancesConfig {
-			balances: founder_allocation
-				.iter()
-				.map(|(account_id, balance)| (account_id.clone(), balance.clone()))
-				.collect(),
-		}),
-		pallet_grandpa: Some(GrandpaConfig {
-			authorities: initial_authorities
-				.iter()
-				.map(|x| (x.1.clone(), 1))
-				.collect(),
-		}),
-		pallet_aura: Some(AuraConfig {
-			authorities: initial_authorities
-				.iter()
-				.map(|(aura_id, _)| (aura_id.clone()))
-				.collect(),
-		}),
-		pallet_sudo: Some(SudoConfig {
-			// Assign network admin rights.
-			key: root_key,
-		}),
-		base_nft: Some(BaseNftConfig {
-			tokens: initial_state,
-		}),
-	}
-}
-
 // testnet config
 pub fn ibtida_config() -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
-	let anmol_ibtida_faucet: AccountId32 =
-		hex!["1e5227bee5f6ca1bb2f08a8e615788b96637b0d8e51c05c290fefaf27b91660b"].into();
-
-	Ok(ChainSpec::from_genesis(
-		// Name
-		"Ibtida",
-		// ID
-		"ibtida",
-		ChainType::Live,
-		move || {
-			ibtida_genesis(
-				wasm_binary,
-				// Initial PoA authorities
-				vec![authority_keys_from_seed(&anmol_ibtida_faucet.to_string())],
-				// Sudo account
-				anmol_ibtida_faucet.clone(),
-				// Pre-funded accounts
-				vec![(anmol_ibtida_faucet.clone(), TOKEN_COUNT)],
-				true,
-			)
-		},
-		// Bootnodes
-		vec![],
-		// Telemetry
-		None,
-		// Protocol ID
-		None,
-		// Properties
-		Some(testnet_chain_properties()),
-		// Extensions
-		None,
-	))
+	ChainSpec::from_json_bytes(&include_bytes!("../../ibtidaRaw.json")[..])
 }
