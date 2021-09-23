@@ -8,9 +8,6 @@ use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
-// The URL for the telemetry server.
-// const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
-
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 
@@ -40,7 +37,7 @@ pub fn chain_properties() -> Properties {
 	let mut properties = Properties::new();
 	properties.insert("tokenDecimals".into(), 18.into());
 	properties.insert("tokenSymbol".into(), "ANML".into());
-	properties.insert("ss58Format".into(), 92.into());
+	properties.insert("ss58Format".into(), 100.into());
 	properties
 }
 
@@ -180,9 +177,4 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		// Extensions
 		None,
 	))
-}
-
-// testnet config
-pub fn ibtida_config() -> Result<ChainSpec, String> {
-	ChainSpec::from_json_bytes(&include_bytes!("../../ibtidaRaw.json")[..])
 }
