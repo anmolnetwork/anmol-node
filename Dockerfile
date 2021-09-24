@@ -9,6 +9,7 @@
 # Build the initial stage with all dependencies from base image
 FROM anmolnetwork/anmol-node-build AS build
 
+COPY chains ./chains
 COPY common ./common
 COPY node ./node
 COPY pallets ./pallets
@@ -42,3 +43,4 @@ CMD []
 
 COPY --from=build --chown=nonroot:nonroot /tmp/anmol-data /var/local/anmol
 COPY --from=build --chown=root:root /build/target/release/anmol /usr/local/bin/anmol
+COPY --from=build --chown=root:root /build/chains /var/local/anmol/chains
