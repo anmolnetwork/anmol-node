@@ -1,13 +1,13 @@
 use anmol_runtime::{
-	AccountId, AuraConfig, BalancesConfig, BaseNftConfig, GenesisConfig, GrandpaConfig, Signature,
-	SudoConfig, SystemConfig, WASM_BINARY, constants::tokens::TOKEN_COUNT, Balance
+	constants::tokens::TOKEN_COUNT, AccountId, AuraConfig, Balance, BalancesConfig, BaseNftConfig,
+	GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
+use hex_literal::hex;
 use sc_service::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use hex_literal::hex;
 use sp_runtime::AccountId32;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
@@ -215,7 +215,10 @@ pub fn ibtida_genesis(
 				.collect(),
 		}),
 		pallet_aura: Some(AuraConfig {
-			authorities: initial_authorities.iter().map(|(aura_id, _)| (aura_id.clone())).collect(),
+			authorities: initial_authorities
+				.iter()
+				.map(|(aura_id, _)| (aura_id.clone()))
+				.collect(),
 		}),
 		pallet_sudo: Some(SudoConfig {
 			// Assign network admin rights.
