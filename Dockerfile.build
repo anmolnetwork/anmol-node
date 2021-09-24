@@ -11,9 +11,10 @@ ADD https://github.com/mozilla/sccache/releases/download/v${SCCACHE_VERSION}/scc
 RUN set -eux \
   && tar -zxvf /tmp/sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz -C /tmp \
   && mv /tmp/sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl /opt/sccache \
-  && chmod +x /opt/sccache/sccache
+  && chmod +x /opt/sccache/sccache \
+  && touch /opt/sccache/config
 
-FROM rust:1.54-slim-buster AS build
+FROM rust:1.55-slim-buster AS build
 
 # non-root user
 ARG USERNAME=anmol
@@ -54,5 +55,6 @@ RUN set -eux \
 
 ENV RUSTC_WRAPPER=/usr/local/bin/sccache
 COPY --from=sccache /opt/sccache/sccache $RUSTC_WRAPPER
+COPY --from=sccache --chown=${USERNAME}:${USERNAME} /opt/sccache/config /home/${USERNAME}/.config/sccache/config
 
 USER ${USERNAME}:${USERNAME}
