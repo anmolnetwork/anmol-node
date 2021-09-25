@@ -301,3 +301,18 @@ fn destroy_class_should_fail() {
 		assert_eq!(Classes::<Runtime>::contains_key(CLASS_ID), false);
 	});
 }
+
+#[test]
+fn expect_tokens_by_owner_fields() {
+	ExtBuilder::default().build().execute_with(|| {
+		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
+		assert_eq!(
+			NonFungibleTokenModule::tokens_by_owner(&BOB, (CLASS_ID, TOKEN_ID)),
+			TokenByOwnerData {
+				percent_owned: 100,
+				token_id: 0
+			}
+		)
+	});
+}
