@@ -302,6 +302,7 @@ fn destroy_class_should_fail() {
 	});
 }
 
+// Tests for additional token_id field on TokensByOwner Storage
 #[test]
 fn expect_tokens_by_owner_fields() {
 	ExtBuilder::default().build().execute_with(|| {
@@ -314,5 +315,36 @@ fn expect_tokens_by_owner_fields() {
 				token_id: 0
 			}
 		)
+	});
+}
+
+#[test]
+fn expect_tokens_by_owner_fields_following_transfer() {
+	ExtBuilder::default().build().execute_with(|| {
+		assert_ok!(NonFungibleTokenModule::create_class(&ALICE, vec![1], ()));
+		assert_ok!(NonFungibleTokenModule::mint(&BOB, CLASS_ID, vec![1], ()));
+
+		assert_ok!(NonFungibleTokenModule::transfer(
+			&BOB,
+			&ALICE,
+			(CLASS_ID, TOKEN_ID),
+			20
+		));
+
+		assert_eq!(
+			NonFungibleTokenModule::tokens_by_owner(&BOB, (CLASS_ID, TOKEN_ID)),
+			TokenByOwnerData {
+				percent_owned: 80,
+				token_id: 0
+			}
+		);
+
+		assert_eq!(
+			NonFungibleTokenModule::tokens_by_owner(&ALICE, (CLASS_ID, TOKEN_ID)),
+			TokenByOwnerData {
+				percent_owned: 20,
+				token_id: 0
+			}
+		);
 	});
 }
