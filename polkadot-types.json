@@ -12,21 +12,13 @@
         "data": "TokenData"
     },
     "TokenInfoOf": "TokenInfo",
-
     "ByteVector": "Vec<u8>",
     "ClassId": "u32",
     "TokenId": "u32",
     "ClassData": {},
-    "TokenData": {
-        "dna": "ByteVector"
-    },
-    "PendingNft": {
-        "account_id": "AccountId",
-        "class_id": "ClassId",
-        "token_data": "TokenData"
-    },
-    "PendingNftOf": "PendingNft",
+    "TokenData": {},
     "TokenByOwnerData": {
-        "percent_owned": "u8"
+        "percent_owned": "u8",
+        "token_id": "u32"
     }
 }

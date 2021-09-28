@@ -60,7 +60,6 @@ construct_runtime!(
 	{
 		System: frame_system::{Module, Call, Storage, Config, Event<T>},
 		NonFungibleTokenModule: nft::{Module, Storage, Config<T>},
-
 	}
 );
 

@@ -30,7 +30,7 @@ use sp_runtime::{
 	},
 	DispatchError, DispatchResult, RuntimeDebug,
 };
-use sp_std::vec::Vec;
+use sp_std::{convert::TryInto, vec::Vec};
 
 mod mock;
 mod tests;
@@ -150,6 +150,7 @@ pub mod module {
 	#[derive(Default, Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
 	pub struct TokenByOwnerData {
 		pub percent_owned: u8,
+		pub token_id: u32,
 	}
 
 	/// Token existence check by owner and class ID.
@@ -319,15 +320,22 @@ impl<T: Config> Pallet<T> {
 			};
 
 			Tokens::<T>::insert(class_id, token_id, token_info);
-			#[cfg(not(feature = "disable-tokens-by-owner"))]
-			TokensByOwner::<T>::insert(
-				owner,
-				(class_id, token_id),
-				// By default, minter gets 100% ownership
-				TokenByOwnerData { percent_owned: 100 },
-			);
-
-			Ok(token_id)
+			match TryInto::<u32>::try_into(token_id) {
+				Err(_) => Err(Error::<T>::NumOverflow.into()),
+				Ok(token) => {
+					#[cfg(not(feature = "disable-tokens-by-owner"))]
+					TokensByOwner::<T>::insert(
+						owner,
+						(class_id, token_id),
+						TokenByOwnerData {
+							// By default, minter gets 100% ownership
+							percent_owned: 100,
+							token_id: token,
+						},
+					);
+					Ok(token_id)
+				}
+			}
 		})
 	}
 
