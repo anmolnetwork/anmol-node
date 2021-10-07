@@ -51,7 +51,8 @@ RUN set -eux \
   # Install Rust components
   && rustup update nightly \
   && rustup target add wasm32-unknown-unknown --toolchain nightly \
-  && rustup component add rustfmt
+  && rustup component add rustfmt \
+  && rustup default stable
 
 ENV RUSTC_WRAPPER=/usr/local/bin/sccache
 COPY --from=sccache /opt/sccache/sccache $RUSTC_WRAPPER

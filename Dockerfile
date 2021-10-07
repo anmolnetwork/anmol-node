@@ -42,5 +42,5 @@ ENTRYPOINT [ "/usr/local/bin/anmol", "--base-path", "/var/local/anmol" ]
 CMD []
 
 COPY --from=build --chown=nonroot:nonroot /tmp/anmol-data /var/local/anmol
-COPY --from=build --chown=nonroot:nonroot /build/chains /var/local/anmol/chains/specs
+COPY --from=build --chown=nonroot:nonroot /build/chains /var/local/anmol/specs
 COPY --from=build --chown=root:root /build/target/release/anmol /usr/local/bin/anmol
