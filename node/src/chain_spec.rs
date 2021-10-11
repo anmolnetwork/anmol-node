@@ -188,31 +188,11 @@ pub fn ibtida_genesis(
 	founder_allocation: Vec<(AccountId32, Balance)>,
 	_enable_println: bool,
 ) -> GenesisConfig {
-	// base nft class for genesis block
-	let initial_state = vec![(
-		get_account_id_from_seed::<sr25519::Public>("Alice"),
-		[0].to_vec(),
-		(),
-		[].to_vec(),
-	)];
-
 	GenesisConfig {
 		frame_system: Some(SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary.to_vec(),
 			changes_trie_config: Default::default(),
-		}),
-		pallet_balances: Some(BalancesConfig {
-			balances: founder_allocation
-				.iter()
-				.map(|(account_id, balance)| (account_id.clone(), balance.clone()))
-				.collect(),
-		}),
-		pallet_grandpa: Some(GrandpaConfig {
-			authorities: initial_authorities
-				.iter()
-				.map(|x| (x.1.clone(), 1))
-				.collect(),
 		}),
 		pallet_aura: Some(AuraConfig {
 			authorities: initial_authorities
@@ -220,12 +200,28 @@ pub fn ibtida_genesis(
 				.map(|(aura_id, _)| (aura_id.clone()))
 				.collect(),
 		}),
+		pallet_grandpa: Some(GrandpaConfig {
+			authorities: initial_authorities
+				.iter()
+				.map(|(_, grandpa_id)| (grandpa_id.clone(), 1))
+				.collect(),
+		}),
 		pallet_sudo: Some(SudoConfig {
 			// Assign network admin rights.
-			key: root_key,
+			key: root_key.clone(),
+		}),
+		pallet_balances: Some(BalancesConfig {
+			balances: founder_allocation
+				.iter()
+				.map(|(account_id, balance)| (account_id.clone(), balance.clone()))
+				.collect(),
 		}),
 		base_nft: Some(BaseNftConfig {
-			tokens: initial_state,
+			// base nft class for genesis block
+			tokens: founder_allocation
+				.iter()
+				.map(|(account_id, _)| (account_id.clone(), [0].to_vec(), (), [].to_vec(),))
+				.collect(),
 		}),
 	}
 }
