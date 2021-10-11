@@ -28,6 +28,11 @@ services:
     volumes:
       - db-alice:/var/local/anmol
 
+    deploy:
+      mode: global
+
+    restart: unless-stopped
+
   node-bob:
     <<: *node
     command: |

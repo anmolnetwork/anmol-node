@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  node-1: &node
+    image: anmolnetwork/anmol-node:ibtida
+
+    command:
+      - --chain=/var/local/anmol/specs/ibtida.json
+      - --name="Node 1"
+      - --node-key-file=/var/local/anmol/keys/node-1.key
+      - --validator
+      - --ws-external
+      - --rpc-external
+      - --rpc-methods=Unsafe
+      - --rpc-cors=all
+      - --no-prometheus
+      - --no-telemetry
+
+    ports:
+      - 9615
+      - 9933
+      - 9944:9944
+      - 30333
+
+    networks:
+      - ibtida
+
+    volumes:
+      - db-node-1:/var/local/anmol
+      - ./chains/raw:/var/local/anmol/specs:ro
+      - ./keys/node-1.key:/var/local/anmol/keys/node-1.key:ro
+
+    deploy:
+      mode: global
+
+    restart: unless-stopped
+
+  node-2:
+    <<: *node
+    command:
+      - --chain=/var/local/anmol/specs/ibtida.json
+      - --name="Node 2"
+      - --node-key-file=/var/local/anmol/keys/node-2.key
+      - --validator
+      - --ws-external
+      - --rpc-external
+      - --rpc-methods=Unsafe
+      - --rpc-cors=all
+      - --no-prometheus
+      - --no-telemetry
+      - --bootnodes=/dns4/node-1/tcp/30333/p2p/12D3KooWPPwHVGffWTNFw2MCk6m7z7drkRhyBU1nPGD1v1sqsgyB
+
+    volumes:
+      - db-node-2:/var/local/anmol
+      - ./chains/raw:/var/local/anmol/specs:ro
+      - ./keys/node-2.key:/var/local/anmol/keys/node-2.key:ro
+
+    depends_on:
+      - node-1
+
+volumes:
+  db-node-1:
+  db-node-2:
+
+networks:
+  ibtida:
