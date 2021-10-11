@@ -220,7 +220,7 @@ pub fn ibtida_genesis(
 			// base nft class for genesis block
 			tokens: founder_allocation
 				.iter()
-				.map(|(account_id, _)| (account_id.clone(), [0].to_vec(), (), [].to_vec(),))
+				.map(|(account_id, _)| (account_id.clone(), [0].to_vec(), (), [].to_vec()))
 				.collect(),
 		}),
 	}
