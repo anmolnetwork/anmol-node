@@ -28,10 +28,9 @@ function insert-key-file() {
   local scheme="$([ $key_type == "aura" ] && echo "Sr25519" || echo "Ed25519")"
 
   echo "  - Importing $key_type key for node $node using scheme $scheme"
-  docker-compose -f docker-compose.ibtida.yml run --rm --entrypoint anmol node-$node \
+  docker-compose -f docker-compose.ibtida.yml run --rm validator-$node \
     key insert \
-    --base-path=/var/local/anmol \
-    --chain=/var/local/anmol/specs/ibtida.json \
+    --chain=/ibtida.json \
     --key-type=$key_type \
     --scheme=$scheme \
     --suri="$(jq -r '.secretSeed' keys/node-$node-$key_type.json)"
@@ -43,7 +42,7 @@ function import-node-keys() {
   insert-key-file $node "aura"
   insert-key-file $node "gran"
 
-  # local endpoint="http://$(docker-compose -f docker-compose.ibtida.yml port ibtida-$node 9933)"
+  # local endpoint="http://$(docker-compose -f docker-compose.ibtida.yml port validator-$node 9933)"
   # insert-key-rpc $node "aura" "$endpoint"
   # insert-key-rpc $node "gran" "$endpoint"
 }

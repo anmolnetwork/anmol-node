@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Build Node
+name: Build and Publish Docker image
 
 on:
   push:
@@ -60,7 +60,7 @@ jobs:
           images: anmolnetwork/anmol-node
           tags: |
             type=ref,event=branch
-            type=ref,event=tag
+            type=semver,pattern={{version}}
           labels: |
             org.opencontainers.image.vendor=Anmol Network
             org.opencontainers.image.url=https://anmol.network

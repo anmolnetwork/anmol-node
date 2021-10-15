@@ -45,8 +45,7 @@ RUN set -eux \
   && unset DEBIAN_FRONTEND \
   && find /var/lib/apt/lists/ -type f -not -name lock -delete \
   # Add user
-  && groupadd --gid ${USER_GID} ${USERNAME} \
-  && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} \
+  && useradd -u ${USER_UID} -U -m ${USERNAME} \
   && chown -R ${USERNAME}:${USERNAME} . \
   # Install Rust components
   && rustup update nightly \
