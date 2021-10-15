@@ -1,23 +1,21 @@
 version: "3.9"
 
 services:
-  node-1: &node
+  validator-1: &node
     image: anmolnetwork/anmol-node:ibtida
 
     command:
-      - --chain=/var/local/anmol/specs/ibtida.json
-      - --name="Node 1"
-      - --node-key-file=/var/local/anmol/keys/node-1.key
+      - --name=validator-1
+      - --chain=/ibtida.json
+      - --node-key-file=/node.key
       - --validator
-      - --ws-external
-      - --rpc-external
-      - --rpc-methods=Unsafe
       - --rpc-cors=all
+      - --unsafe-rpc-external
+      - --unsafe-ws-external
       - --no-prometheus
       - --no-telemetry
 
     ports:
-      - 9615
       - 9933
       - 9944:9944
       - 30333
@@ -26,41 +24,45 @@ services:
       - ibtida
 
     volumes:
-      - db-node-1:/var/local/anmol
-      - ./chains/raw:/var/local/anmol/specs:ro
-      - ./keys/node-1.key:/var/local/anmol/keys/node-1.key:ro
+      - db-validator-1:/data
+      - ./chains/raw/ibtida.json:/ibtida.json:ro
+      - ./keys/node-1.key:/node.key:ro
 
     deploy:
       mode: global
 
     restart: unless-stopped
 
-  node-2:
+  validator-2:
     <<: *node
     command:
-      - --chain=/var/local/anmol/specs/ibtida.json
-      - --name="Node 2"
-      - --node-key-file=/var/local/anmol/keys/node-2.key
+      - --name=validator-2
+      - --chain=/ibtida.json
+      - --node-key-file=/node.key
       - --validator
-      - --ws-external
-      - --rpc-external
-      - --rpc-methods=Unsafe
       - --rpc-cors=all
+      - --unsafe-rpc-external
+      - --unsafe-ws-external
       - --no-prometheus
       - --no-telemetry
-      - --bootnodes=/dns4/node-1/tcp/30333/p2p/12D3KooWPPwHVGffWTNFw2MCk6m7z7drkRhyBU1nPGD1v1sqsgyB
+      - --bootnodes=/dns4/validator-1/tcp/30333/p2p/12D3KooWPPwHVGffWTNFw2MCk6m7z7drkRhyBU1nPGD1v1sqsgyB
+
+    ports:
+      - 9933
+      - 9944
+      - 30333
 
     volumes:
-      - db-node-2:/var/local/anmol
-      - ./chains/raw:/var/local/anmol/specs:ro
-      - ./keys/node-2.key:/var/local/anmol/keys/node-2.key:ro
+      - db-validator-2:/data
+      - ./chains/raw/ibtida.json:/ibtida.json:ro
+      - ./keys/node-2.key:/node.key:ro
 
     depends_on:
-      - node-1
+      - validator-1
 
 volumes:
-  db-node-1:
-  db-node-2:
+  db-validator-1:
+  db-validator-2:
 
 networks:
   ibtida:

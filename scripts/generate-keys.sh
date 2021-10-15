@@ -6,7 +6,7 @@ if [[ -x target/release/anmol ]]; then
   anmol="target/release/anmol"
   node_key_path="$(pwd)/keys"
 else
-  anmol="docker run --rm --entrypoint anmol -v -v $(pwd)/keys:/var/local/anmol/keys anmolnetwork/anmol-node:ibtida"
+  anmol="docker run --rm -v $(pwd)/keys:/var/local/anmol/keys anmolnetwork/anmol-node:ibtida"
   node_key_path="/var/local/anmol/keys"
 fi
 

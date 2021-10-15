@@ -6,7 +6,7 @@ if [[ -x target/release/anmol ]]; then
   anmol="target/release/anmol"
   chain_spec_path="$(pwd)/chains"
 else
-  anmol="docker run --rm --entrypoint anmol -v $(pwd)/chains:/var/local/anmol/specs:ro anmolnetwork/anmol-node:ibtida"
+  anmol="docker run --rm -v $(pwd)/chains:/var/local/anmol/specs:ro anmolnetwork/anmol-node:ibtida"
   chain_spec_path="/var/local/anmol/specs"
 fi
 
