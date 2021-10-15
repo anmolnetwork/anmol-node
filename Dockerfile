@@ -25,22 +25,35 @@ ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY=
 ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
+ARG PROFILE=release
 ARG BUILD_ARGS=
 
 RUN set -eux \
-  && cargo build --release --locked $BUILD_ARGS \
-  && mkdir -p /tmp/anmol-data
+  && cargo build --$PROFILE --locked $BUILD_ARGS
 
 # Builds the final production image
-FROM gcr.io/distroless/cc-debian10:nonroot AS production
+FROM debian:buster-slim AS production
 
 EXPOSE 9615 9933 9944 30333
 
-VOLUME [ "/var/local/anmol" ]
+ARG USERNAME=anmol
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
 
-ENTRYPOINT [ "/usr/local/bin/anmol", "--base-path", "/var/local/anmol" ]
-CMD []
+RUN set -eux \
+  && useradd -u ${USER_UID} -U -m -d /${USERNAME} -s /bin/sh ${USERNAME} \
+  && mkdir -p /data \
+  && chown -R ${USERNAME}:${USERNAME} /data \
+	&& mkdir -p /${USERNAME}/.local/share \
+	&& ln -s /data /${USERNAME}/.local/share/${USERNAME} \
+	&& rm -rf /usr/bin /usr/sbin
 
-COPY --from=build --chown=nonroot:nonroot /tmp/anmol-data /var/local/anmol
-COPY --from=build --chown=nonroot:nonroot /build/chains /var/local/anmol/specs
-COPY --from=build --chown=root:root /build/target/release/anmol /usr/local/bin/anmol
+USER ${USERNAME}
+
+VOLUME [ "/data" ]
+
+ENTRYPOINT [ "/usr/local/bin/anmol" ]
+
+ARG PROFILE=release
+
+COPY --from=build --chown=root:root /build/target/$PROFILE/anmol /usr/local/bin/anmol
