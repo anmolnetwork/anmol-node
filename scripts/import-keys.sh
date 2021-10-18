@@ -43,10 +43,14 @@ function import-node-keys() {
   if [ "$method" == "file" ]; then
     insert-key-file $node "aura"
     insert-key-file $node "gran"
+    docker-compose -f docker-compose.ibtida.yml down
   elif [ "$method" == "rpc" ]; then
     local rpc_endpoint="http://$(docker-compose -f docker-compose.ibtida.yml port validator-$node 9933)"
     insert-key-rpc $node "aura" "$rpc_endpoint"
     insert-key-rpc $node "gran" "$rpc_endpoint"
+  else
+    echo "ERROR: Unknown method $method"
+    exit 1
   fi
 }
 

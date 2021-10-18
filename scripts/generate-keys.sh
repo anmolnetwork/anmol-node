@@ -13,13 +13,6 @@ fi
 function generate-keys() {
   local node="$1"
 
-  if [[ -f keys/node-$node.key ]]; then
-    echo "  - Found node key for node $node!"
-  else
-    echo "  - Generating node key for node $node"
-    $anmol key generate-node-key --file $node_key_path/node-$node.key
-  fi
-
   if [[ -f keys/node-$node-aura.json ]]; then
     echo "  - Found Aura key for node $node!"
   else
