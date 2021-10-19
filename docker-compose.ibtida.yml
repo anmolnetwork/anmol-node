@@ -7,12 +7,13 @@ services:
     command:
       - --name=validator-1
       - --chain=/ibtida.json
-      - --node-key-file=/node.key
+      - --node-key=0000000000000000000000000000000000000000000000000000000000000001
       - --validator
       - --rpc-cors=all
       - --rpc-external
       - --rpc-methods=Unsafe
       - --unsafe-rpc-external
+      - --ws-external
       - --unsafe-ws-external
       - --no-prometheus
       - --no-telemetry
@@ -28,7 +29,6 @@ services:
     volumes:
       - db-validator-1:/data
       - ./chains/raw/ibtida.json:/ibtida.json:ro
-      - ./keys/node-1.key:/node.key:ro
 
     deploy:
       mode: global
@@ -40,26 +40,25 @@ services:
     command:
       - --name=validator-2
       - --chain=/ibtida.json
-      - --node-key-file=/node.key
       - --validator
       - --rpc-cors=all
       - --rpc-external
       - --rpc-methods=Unsafe
       - --unsafe-rpc-external
+      - --ws-external
       - --unsafe-ws-external
       - --no-prometheus
       - --no-telemetry
-      - --bootnodes=/dns4/validator-1/tcp/30333/p2p/12D3KooWPPwHVGffWTNFw2MCk6m7z7drkRhyBU1nPGD1v1sqsgyB
+      - --bootnodes=/dns4/validator-1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
 
     ports:
       - 9933
-      - 9944
+      - 9945:9944
       - 30333
 
     volumes:
       - db-validator-2:/data
       - ./chains/raw/ibtida.json:/ibtida.json:ro
-      - ./keys/node-2.key:/node.key:ro
 
     depends_on:
       - validator-1

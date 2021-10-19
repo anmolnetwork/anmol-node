@@ -10,24 +10,26 @@ else
   chain_spec_path="/var/local/anmol/specs"
 fi
 
-if [[ "${1:-}" == "raw" ]]; then
-  echo "*** Generating raw chain spec ***"
-  $anmol build-spec \
-    --disable-default-bootnode \
-    --chain $chain_spec_path/ibtida.json \
-    --raw > chains/raw/ibtida.json
-else
-  echo "*** Generating chain spec ***"
-  echo "  - Replacing Aura and Grandpa keys in spec"
-  $anmol build-spec \
-    --disable-default-bootnode \
-    --chain ibtida | \
+function replace-addresses() {
   jq \
     --argfile node1Aura keys/node-1-aura.json \
     --argfile node2Aura keys/node-2-aura.json \
     --argfile node1Gran keys/node-1-gran.json \
     --argfile node2Gran keys/node-2-gran.json \
     '.genesis.runtime.palletAura.authorities = [($node1Aura | .ss58Address), ($node2Aura | .ss58Address)] |
-    .genesis.runtime.palletGrandpa.authorities = [[($node1Gran | .ss58Address), 1], [($node2Gran | .ss58Address), 1]]' \
-  > chains/ibtida.json
-fi
+    .genesis.runtime.palletGrandpa.authorities = [[($node1Gran | .ss58Address), 1], [($node2Gran | .ss58Address), 1]]' | \
+  sed 's/5e+27/5000000000000000000000000000/'
+}
+
+echo "*** Generating chain spec ***"
+echo "  - Replacing Aura and Grandpa keys in spec"
+$anmol build-spec \
+  --disable-default-bootnode \
+  --chain ibtida | \
+  replace-addresses > chains/ibtida.json
+
+echo "  - Generating raw chain spec"
+$anmol build-spec \
+  --disable-default-bootnode \
+  --chain $chain_spec_path/ibtida.json \
+  --raw > chains/raw/ibtida.json

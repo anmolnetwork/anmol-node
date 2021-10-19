@@ -20,18 +20,18 @@
       },
       "palletAura": {
         "authorities": [
-          "5CcnCFBV4RQdeq2XPMitFJk7ZsQtTakvsj4JKjBF5BzB7oPe",
-          "5Hipcx1M9WWPnvZLMSeS1qk3S2Bz4T19JT7AwtifgBcCH5U6"
+          "5EJGh5BVsTkmqX2N9qvZn7Jej1LLBKTyc6K5nMUTLTUfD2DG",
+          "5HguxT6Gu17jq7yaibAZTP7vtHVNvigbM1HvqPQa5j7YN9CV"
         ]
       },
       "palletGrandpa": {
         "authorities": [
           [
-            "5GgeHH27aRmzwKx72QU2cDVk9fQKgpSZiidL8NYyezeMvYia",
+            "5Hdr7fvjtmyo6jFjfP6i8UnaY6cvdKFdmdvsurbHbEhpBCwW",
             1
           ],
           [
-            "5EeRV5bd4dQ5JkZnLuxRPdujpRG7raD2SxNVFqrzQ7EJXALp",
+            "5CNF9gAbABtyxUKJ8HqTab8oDvjMmkgSz7h63z3AETSCuZX6",
             1
           ]
         ]
