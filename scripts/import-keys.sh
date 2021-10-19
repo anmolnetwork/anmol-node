@@ -6,7 +6,7 @@ set -euo pipefail
 function insert-key-rpc() {
   local node="$1"
   local key_type="$2"
-  local endpoint="$3"
+  local rpc_endpoint="$3"
 
   echo "  - Importing $key_type key for node $node"
   jq --null-input --arg keyType "$key_type" --argfile key "keys/node-$node-$key_type.json" '{
@@ -18,7 +18,7 @@ function insert-key-rpc() {
       ($key | .secretPhrase),
       ($key | .publicKey)
     ]
-  }' | curl -s -X POST "$endpoint" -H "Content-Type:application/json;charset=utf-8" -d @-
+  }' | curl -s -X POST "$rpc_endpoint" -H "Content-Type:application/json;charset=utf-8" -d @-
 }
 
 # Insert the key from /path/to/key/file into the keystore
@@ -38,15 +38,20 @@ function insert-key-file() {
 
 function import-node-keys() {
   local node="$1"
+  local method="$2"
 
-  insert-key-file $node "aura"
-  insert-key-file $node "gran"
-
-  # local endpoint="http://$(docker-compose -f docker-compose.ibtida.yml port validator-$node 9933)"
-  # insert-key-rpc $node "aura" "$endpoint"
-  # insert-key-rpc $node "gran" "$endpoint"
+  if [ "$method" == "file" ]; then
+    insert-key-file $node "aura"
+    insert-key-file $node "gran"
+  elif [ "$method" == "rpc" ]; then
+    local rpc_endpoint="http://$(docker-compose -f docker-compose.ibtida.yml port validator-$node 9933)"
+    insert-key-rpc $node "aura" "$rpc_endpoint"
+    insert-key-rpc $node "gran" "$rpc_endpoint"
+  fi
 }
 
+METHOD="${1:-file}"
+
 echo "*** Importing Anmol Ibtida chain keys ***"
-import-node-keys 1
-import-node-keys 2
+import-node-keys 1 "$METHOD"
+import-node-keys 2 "$METHOD"

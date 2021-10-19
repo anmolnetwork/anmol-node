@@ -10,6 +10,8 @@ services:
       - --node-key-file=/node.key
       - --validator
       - --rpc-cors=all
+      - --rpc-external
+      - --rpc-methods=Unsafe
       - --unsafe-rpc-external
       - --unsafe-ws-external
       - --no-prometheus
@@ -41,6 +43,8 @@ services:
       - --node-key-file=/node.key
       - --validator
       - --rpc-cors=all
+      - --rpc-external
+      - --rpc-methods=Unsafe
       - --unsafe-rpc-external
       - --unsafe-ws-external
       - --no-prometheus
