@@ -237,7 +237,7 @@ pub fn testnet_chain_properties() -> Properties {
 pub fn ibtida_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 	let anmol_ibtida_faucet: AccountId32 =
-		hex!["1e5227bee5f6ca1bb2f08a8e615788b96637b0d8e51c05c290fefaf27b91660b"].into();
+		hex!["169af6d461e12d74fe252c853c8728bb4bed714af3a2bc70406a95e4b471bb43"].into();
 
 	Ok(ChainSpec::from_genesis(
 		// Name
