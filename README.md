@@ -24,7 +24,7 @@ Follow the steps below to get started with the Anmol Node. :hammer_and_wrench:
 
 ### Rust Setup
 
-First, complete the [basic Rust setup instructions](./doc/rust-setup.md).
+First, complete the [basic Rust setup instructions](./docs/rust-setup.md).
 
 ### Run
 
