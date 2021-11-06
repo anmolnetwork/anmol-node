@@ -4,5 +4,6 @@ members = [
     'pallets/*',
     'runtime',
 ]
+librocksdb-sys = "6.17.3"
 [profile.release]
 panic = 'unwind'
