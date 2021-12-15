@@ -1,3 +1,4 @@
+use anmol_runtime::opaque::SessionKeys;
 use anmol_runtime::{
 	constants::tokens::TOKEN_COUNT, AccountId, AuraConfig, Balance, BalancesConfig, BaseNftConfig,
 	GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
@@ -8,7 +9,6 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use sp_runtime::AccountId32;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -184,8 +184,8 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 pub fn ibtida_genesis(
 	wasm_binary: &[u8],
 	initial_authorities: Vec<(AuraId, GrandpaId)>,
-	root_key: AccountId32,
-	founder_allocation: Vec<(AccountId32, Balance)>,
+	root_key: AccountId,
+	allocations: Vec<(AccountId, Balance)>,
 	_enable_println: bool,
 ) -> GenesisConfig {
 	GenesisConfig {
@@ -211,14 +211,14 @@ pub fn ibtida_genesis(
 			key: root_key.clone(),
 		}),
 		pallet_balances: Some(BalancesConfig {
-			balances: founder_allocation
+			balances: allocations
 				.iter()
 				.map(|(account_id, balance)| (account_id.clone(), balance.clone()))
 				.collect(),
 		}),
 		base_nft: Some(BaseNftConfig {
 			// base nft class for genesis block
-			tokens: founder_allocation
+			tokens: allocations
 				.iter()
 				.map(|(account_id, _)| (account_id.clone(), [0].to_vec(), (), [].to_vec()))
 				.collect(),
@@ -236,8 +236,11 @@ pub fn testnet_chain_properties() -> Properties {
 // testnet config
 pub fn ibtida_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
-	let anmol_ibtida_faucet: AccountId32 =
-		hex!["169af6d461e12d74fe252c853c8728bb4bed714af3a2bc70406a95e4b471bb43"].into();
+	let anmol_ibtida_faucet: AccountId =
+		hex!["985bcd30ed5c3fb0ce24a00400d132b471b37a3cabb1956a54ba18a53af4c170"].into();
+	let enc_ses_keys = hex!("9e2639f40c924ea196462ec56f23f4b1777fbc45df154e6a154d1785809736692ee686bdd9c637fc09de7e3c5bca1157c814b882d90887c0a77b500c8ef02b7a");
+	let session_keys: SessionKeys =
+		codec::Decode::decode(&mut enc_ses_keys.as_ref()).expect("must decode");
 
 	Ok(ChainSpec::from_genesis(
 		// Name
@@ -248,8 +251,8 @@ pub fn ibtida_config() -> Result<ChainSpec, String> {
 		move || {
 			ibtida_genesis(
 				wasm_binary,
-				// Initial PoA authorities
-				vec![authority_keys_from_seed(&anmol_ibtida_faucet.to_string())],
+				// Initial PoA authorities.
+				vec![(session_keys.aura.clone(), session_keys.grandpa.clone())],
 				// Sudo account
 				anmol_ibtida_faucet.clone(),
 				// Pre-funded accounts
